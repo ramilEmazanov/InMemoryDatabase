@@ -1,13 +1,15 @@
 #pragma once
 
 #include <expected>
-#include <variant>
-#include <parsed_command.hpp>
-#include <token.hpp>
+#include "parsed_command.hpp"
 #include <span>
+#include <token.hpp>
+#include <variant>
 
 enum class ParsingError {};
 
 class CommandParser {
-  static std::expected<ParsedCommand, ParsingError> Parse(std::span<const Token> token);
+ public:
+  static std::expected<ParsedCommand, ParsingError> Parse(
+      std::span<const Token> token);
 };

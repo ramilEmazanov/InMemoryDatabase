@@ -13,7 +13,7 @@ struct Token {
   std::string lexeme;
 };
 
-class LexicalError {
-  LexicalErrorText message;
-  std::size_t column;
+struct LexicalError {
+  LexicalErrorText err;
+  std::string message;
 };

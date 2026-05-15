@@ -1,14 +1,15 @@
+#include "tokenizer.hpp"
+
 #include <algorithm>
 #include <sstream>
 #include <string>
-#include <tokenizer.hpp>
-#include <types.hpp>
 #include <unordered_map>
 #include <vector>
 
-std::expected<std::vector<Token>, LexicalError> Tokenize(
-    std::string_view line) {
+#include "types.hpp"
 
+std::expected<std::vector<Token>, LexicalError> Tokenizer::Tokenize(
+    std::string_view line) {
   std::vector<Token> res;
   std::size_t column = 0;
 
@@ -31,4 +32,7 @@ std::expected<std::vector<Token>, LexicalError> Tokenize(
     res.push_back(Token{TokenKind::Bareword, token});
   }
   res.push_back(Token{TokenKind::EndOfLine, ""});
+  return res;
 }
+
+void Tokenizer::foo() {}
