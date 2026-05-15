@@ -1,3 +1,5 @@
+#pragma once
+
 #include <functional>
 #include <string>
 #include <unordered_map>
@@ -21,7 +23,7 @@ class CommandDef {
   Func func_;
 };
 
-class Commands {
+class CommandsTable {
  public:
   void Add(CommandDef cmd);
 

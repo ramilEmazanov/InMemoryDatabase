@@ -1,7 +1,9 @@
+#pragma once
+#include <storage.hpp>
 #include <string>
 #include <vector>
+
 #include "types.hpp"
-#include <storage.hpp>
 
 void ParseCli(int argc, const char** argv, Storage& storage) {}
 

@@ -23,7 +23,11 @@ struct Result {
   std::string str;
 };
 
-struct Command {
-  std::string cmd_;
+class Command {
+ public:
+  bool IsExit() const;
+
+ private:
+  std::string name_;
   std::vector<std::string> args_;
 };

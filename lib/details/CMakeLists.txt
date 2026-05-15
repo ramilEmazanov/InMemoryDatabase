@@ -4,14 +4,14 @@ add_library(details)
 
 target_sources(details 
 PRIVATE
-  commands.cpp
+  commands_table.cpp
   parser.cpp
   storage.cpp
 PUBLIC
   FILE_SET HEADERS
   FILES
     parser.hpp
-    commands.hpp
+    commands_table.hpp
     storage.hpp
     types.hpp
 )

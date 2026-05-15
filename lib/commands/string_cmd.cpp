@@ -1,4 +1,4 @@
-#include "string_cmd.hpp"
+#include <string_cmd.hpp>
 
 Result SetCmdStr(Storage& s, Args& args) {}
 
@@ -12,6 +12,6 @@ Result ExpireStr(Storage& s, Args& args) {}
 
 Result TtlStr(Storage& s, Args& args) {}
 
-void AddStringCommands(Commands& cmd) {
+void AddStringCommands(CommandsTable& cmd) {
   cmd.Add({"SET", 1, 1, &SetCmdStr});
 }

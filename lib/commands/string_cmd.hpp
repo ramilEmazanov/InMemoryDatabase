@@ -1,4 +1,5 @@
-#include <commands.hpp>
+#pragma once
+#include <commands_table.hpp>
 #include <storage.hpp>
 #include <types.hpp>
 
@@ -14,4 +15,4 @@ Result ExpireStr(Storage& s, Args& args);
 
 Result TtlStr(Storage& s, Args& args);
 
-void AddStringCommands(Commands& cmd);
+void AddStringCommands(CommandsTable& cmd);
