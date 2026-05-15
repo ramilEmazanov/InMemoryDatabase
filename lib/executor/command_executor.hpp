@@ -1,11 +1,9 @@
-#include <parsed_command.hpp>
-
-struct Reply {};
+#include "parsed_command.hpp"
+#include "reply.hpp"
 
 class CommandExecutor {
-  public:
+ public:
   Reply Execute(const ParsedCommand& command);
 
-  private:
-
+ private:
 };

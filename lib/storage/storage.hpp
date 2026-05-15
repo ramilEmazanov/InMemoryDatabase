@@ -6,6 +6,8 @@
 #include <variant>
 
 #include "types.hpp"
+#include "memory_controller.hpp"
+#include "ttl_index.hpp"
 
 class Storage {
  public:
@@ -13,6 +15,6 @@ class Storage {
 
  private:
   std::unordered_map<std::string, Entry> storage_;
-  size_t maxmemory_;
-  size_t used_;
+  MemoryController memctr_;
+  TTLIndex ttl_ind_;
 };

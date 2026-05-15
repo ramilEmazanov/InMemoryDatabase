@@ -17,6 +17,7 @@ using Geo = std::map<std::string, std::pair<double, double>>;
 struct Entry {
   std::variant<String, List, Set, Geo> entry_;
   std::optional<std::chrono::steady_clock::time_point> expire_;
+  std::size_t size_bytes_;
 };
 
 struct Result {
@@ -25,8 +26,6 @@ struct Result {
 
 class Command {
  public:
-  bool IsExit() const;
-
  private:
   std::string name_;
   std::vector<std::string> args_;
