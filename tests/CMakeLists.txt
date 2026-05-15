@@ -1,0 +1,15 @@
+add_executable(labwork10_tests
+  abc.cpp
+)
+
+target_link_libraries(labwork10_tests PRIVATE
+  GTest::gtest_main
+  GTest::gmock
+)
+
+target_include_directories(labwork10_tests PRIVATE
+  ${PROJECT_SOURCE_DIR}
+)
+
+include(GoogleTest)
+gtest_discover_tests(labwork10_tests)
