@@ -7,14 +7,13 @@
 void ReplyFormatter::Format(const Reply& reply, std::ostream& out) {
   auto overload = Overload(
     [&](const VoidReply& void_reply) {
-      out << "void_reply\n";
+      out << "SUCCESS\n";
     },
     [&](const IntegerReply& integer_reply) {
       out << "integer_reply\n";
     },
-    [&](const StringReply& strig_reply) {
-      out << "string_reply\n";
-
+    [&](const StringReply& string_reply) {
+      out << string_reply.value << '\n';
     },
     [&](const ArrayReply& array_reply) {
       out << "array_reply\n";

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <sstream>
 #include <string>
+#include <iostream>
 #include <unordered_map>
 #include <vector>
 
@@ -24,11 +25,11 @@ std::expected<std::vector<Token>, LexicalError> Tokenizer::Tokenize(
 
     std::size_t start = column;
 
-    while (line[column] != ' ' && line[column] != '\t') {
+    while (line[column] != ' ' && line[column] != '\t' && column != line.size()) {
       column++;
     }
 
-    std::string token(line.substr(start, column));
+    std::string token(line.substr(start, column - start));
     res.push_back(Token{TokenKind::Bareword, token});
   }
   res.push_back(Token{TokenKind::EndOfLine, ""});

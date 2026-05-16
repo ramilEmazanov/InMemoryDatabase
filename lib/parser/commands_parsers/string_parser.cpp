@@ -1,6 +1,7 @@
 #include "string_parser.hpp"
 
 #include <expected>
+#include <iostream>
 
 #include "errors.hpp"
 
@@ -16,7 +17,7 @@ std::expected<ParsedCommand, ParsingError> SetCommandParse(
 std::expected<ParsedCommand, ParsingError> GetCommandParse(
     std::span<const Token> arguments) {
   if (arguments.size() != 3) {
-    return std::unexpected(WrongArity{"SET", 2, arguments.size() - 1});
+    return std::unexpected(WrongArity{"GET", 2, arguments.size() - 1});
   }
 
   return GetCommand{arguments[1].lexeme};

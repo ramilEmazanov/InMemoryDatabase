@@ -4,6 +4,7 @@
 #include <string>
 #include <unordered_map>
 #include <variant>
+#include <iostream>
 
 #include "memory_controller.hpp"
 #include "ttl_index.hpp"
@@ -14,7 +15,17 @@ class Storage {
   Storage(MemoryController& memctr, TTLIndex& ttl_ind);
 
   template <typename T>
-  T* GetValueAs(const std::string& key);
+  T* GetValueAs(const std::string& key) {
+    if (std::holds_alternative<T>(storage_[key].val_)) {
+      T* ptr = &std::get<T>(storage_[key].val_);
+      // std::cout << 2;
+      // std::cout << *ptr << '\n';
+      return ptr;
+    } else {
+      std::cout << 1;
+      return nullptr;
+    }
+  }
 
   void SetValue(std::string key, Value val);
 

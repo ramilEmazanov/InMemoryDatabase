@@ -12,14 +12,14 @@ int Runner::Run() {
     auto tokens = Tokenizer::Tokenize(line);
 
     if (!tokens.has_value()) {
-      // error_out_ << tokens.error() << '\n';
+      error_out_ << "!token.has_value" << '\n';
       continue;
     }
 
     auto command = CommandParser::Parse(tokens.value());
 
     if(!command.has_value()) {
-      // error_out_ << command.error().message;
+      error_out_ << "!command.has_value()";
     }
 
     auto reply = executor_.Execute(command.value());
