@@ -21,7 +21,4 @@ add_subdirectory(tests)
 
 add_executable(labwork10 main.cpp)
 
-target_link_libraries(labwork10 PRIVATE
-commands
-details
-)
+target_link_libraries(labwork10 PRIVATE runner)

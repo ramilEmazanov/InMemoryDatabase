@@ -1,12 +1,12 @@
 #pragma once
 
 #include <expected>
-#include "parsed_command.hpp"
 #include <span>
 #include <token.hpp>
 #include <variant>
 
-enum class ParsingError {};
+#include "parsed_command.hpp"
+#include "errors.hpp"
 
 class CommandParser {
  public:

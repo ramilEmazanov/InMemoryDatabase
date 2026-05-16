@@ -2,31 +2,27 @@
 
 #include <chrono>
 #include <deque>
-#include <map>
 #include <optional>
-#include <set>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <variant>
 #include <vector>
 
-using String = std::string;
-using List = std::deque<std::string>;
-using Set = std::set<std::string>;
-using Geo = std::map<std::string, std::pair<double, double>>;
+struct GeoSpatial {
+  double lat;
+  double lon;
+};
+
+using StringValue = std::string;
+using ListValue = std::deque<std::string>;
+using SetValue = std::unordered_set<std::string>;
+using GeoValue = std::unordered_map<std::string, GeoSpatial>;
+
+using Value = std::variant<StringValue, ListValue, SetValue, GeoValue>;
 
 struct Entry {
-  std::variant<String, List, Set, Geo> entry_;
-  std::optional<std::chrono::steady_clock::time_point> expire_;
+  Value val_;
+  std::optional<std::chrono::steady_clock::time_point> expire_at_;
   std::size_t size_bytes_;
-};
-
-struct Result {
-  std::string str;
-};
-
-class Command {
- public:
- private:
-  std::string name_;
-  std::vector<std::string> args_;
 };

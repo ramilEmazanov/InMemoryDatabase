@@ -1,19 +1,12 @@
+#pragma once
+
 #include <string>
 
-enum class TokenKind { Bareword, Quoted, EndOfLine };
+#include "errors.hpp"
 
-enum class LexicalErrorText {
-  UnterminatedString,
-  InvalidEscapeSequence,
-  UnexpectedControlCharacter
-};
+enum class TokenKind { Bareword, Quoted, EndOfLine };
 
 struct Token {
   TokenKind kind;
   std::string lexeme;
-};
-
-struct LexicalError {
-  LexicalErrorText err;
-  std::string message;
 };

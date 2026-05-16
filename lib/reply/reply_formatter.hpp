@@ -4,5 +4,6 @@
 #include "reply.hpp"
 
 class ReplyFormatter {
-  void Format(const Reply& reply);
+ public:
+  static void Format(const Reply& reply, std::ostream& out);
 };

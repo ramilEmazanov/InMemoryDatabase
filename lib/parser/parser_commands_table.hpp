@@ -8,6 +8,7 @@
 #include "command_parser.hpp"
 #include "parsed_command.hpp"
 #include "string_parser.hpp"
+#include "errors.hpp"
 
 using ParseFunction = std::expected<ParsedCommand, ParsingError> (*)(
     std::span<const Token> arguments);

@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "types.hpp"
+#include "errors.hpp"
 
 std::expected<std::vector<Token>, LexicalError> Tokenizer::Tokenize(
     std::string_view line) {
@@ -34,5 +34,3 @@ std::expected<std::vector<Token>, LexicalError> Tokenizer::Tokenize(
   res.push_back(Token{TokenKind::EndOfLine, ""});
   return res;
 }
-
-void Tokenizer::foo() {}

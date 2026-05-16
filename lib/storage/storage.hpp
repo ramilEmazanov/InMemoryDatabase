@@ -11,7 +11,10 @@
 
 class Storage {
  public:
-  void get();
+  template<typename T>
+  T* GetValueAs(const std::string& key);
+
+  void SetValue(std::string key, Value val);
 
  private:
   std::unordered_map<std::string, Entry> storage_;

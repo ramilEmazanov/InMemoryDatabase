@@ -3,12 +3,14 @@
 #include <span>
 
 #include "command_parser.hpp"
+#include "errors.hpp"
 #include "parsed_command.hpp"
 
 std::expected<ParsedCommand, ParsingError> SetCommandParse(
     std::span<const Token> arguments);
 
-void GetCommandParse();
+std::expected<ParsedCommand, ParsingError> GetCommandParse(
+    std::span<const Token> arguments);
 
 void StrlenCommandParse();
 
