@@ -2,8 +2,6 @@
 
 #include <string>
 
-#include "errors.hpp"
-
 enum class TokenKind { Bareword, Quoted, EndOfLine };
 
 struct Token {
