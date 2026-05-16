@@ -14,3 +14,6 @@ void Storage::SetValue(std::string key, Value val) {
   // entry.val_ = val;
   storage_[key] = Entry{val, std::nullopt, 0};
 }
+
+Storage::Storage(MemoryController& memctr, TTLIndex& ttl_ind)
+    : memctr_(memctr), ttl_ind_(ttl_ind) {}

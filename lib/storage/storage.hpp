@@ -5,13 +5,15 @@
 #include <unordered_map>
 #include <variant>
 
-#include "types.hpp"
 #include "memory_controller.hpp"
 #include "ttl_index.hpp"
+#include "types.hpp"
 
 class Storage {
  public:
-  template<typename T>
+  Storage(MemoryController& memctr, TTLIndex& ttl_ind);
+
+  template <typename T>
   T* GetValueAs(const std::string& key);
 
   void SetValue(std::string key, Value val);
