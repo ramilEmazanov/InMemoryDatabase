@@ -3,6 +3,7 @@
 #include "command_parser.hpp"
 #include "token.hpp"
 #include "reply_formatter.hpp"
+#include "errors.hpp"
 #include "tokenizer.hpp"
 
 int Runner::Run() {
@@ -12,7 +13,7 @@ int Runner::Run() {
     auto tokens = Tokenizer::Tokenize(line);
 
     if (!tokens.has_value()) {
-      error_out_ << "!token.has_value" << '\n';
+      error_out_ << "Tokenizing error : " << FormatLexicalError(tokens.error()) << '\n';
       continue;
     }
 

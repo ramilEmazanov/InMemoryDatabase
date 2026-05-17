@@ -47,7 +47,7 @@ DfaState Transition(DfaState state, char ch, std::size_t column,
             if (ch == '"') {
               return QuotedState{"", column};
             }
-            if (std::iscntrl(static_cast<unsigned char>(ch))) {
+            if (std::iscntrl(ch)) {
               return ErrorState{UnexpectedControlCharacter{column, ch}};
             }
             return BarewordState{std::string(1, ch), column};
@@ -129,18 +129,22 @@ std::optional<LexicalError> Finalize(DfaState& state, std::vector<Token>& out) {
 
 std::expected<std::vector<Token>, LexicalError> Tokenizer::Tokenize(
     std::string_view line) {
-    std::vector<Token> tokens;
+  std::vector<Token> tokens;
+
   DfaState state = InitialState{};
 
   for (std::size_t i = 0; i < line.size(); ++i) {
     state = Transition(state, line[i], i, tokens);
+
     if (std::holds_alternative<ErrorState>(state)) {
       return std::unexpected{std::get<ErrorState>(state).error};
     }
   }
 
-  if (auto error = Finalize(state, tokens)) {
-    return std::unexpected{*error};
+  auto res = Finalize(state, tokens);
+
+  if (res.has_value()) {
+    return std::unexpected{res.value()};
   }
 
   tokens.push_back(Token{TokenKind::EndOfLine, ""});
