@@ -20,11 +20,3 @@ struct AppendCommand {
   std::string value;
 };
 
-struct ExpireCommand {
-  std::string key;
-  std::size_t seconds;
-};
-
-struct TTLCommand {
-  std::string key;
-};

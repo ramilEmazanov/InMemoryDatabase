@@ -4,14 +4,15 @@
 #include <map>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 class TimeController {
  public:
   void SetExpiration(const std::string& key, std::size_t sec);
 
-  void CleanExpired();
+  std::vector<std::string> CleanExpired();
 
-  void CancelExpiration(const std::string& key);
+  void DeleteExpiration(const std::string& key);
 
  private:
   std::multimap<std::chrono::steady_clock::time_point, std::string> by_time_;

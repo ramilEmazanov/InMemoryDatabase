@@ -6,13 +6,15 @@ void TimeController::SetExpiration(const std::string& key, std::size_t sec) {
   steady_clock::time_point now = steady_clock::now();
   steady_clock::time_point expire_at = now + seconds(sec);
 
-  CancelExpiration(key);
+  DeleteExpiration(key);
 
   by_time_.emplace(expire_at, key);
   by_key_.emplace(key, expire_at);
 }
 
-void TimeController::CleanExpired() {
+std::vector<std::string> TimeController::CleanExpired() {
+  std::vector<std::string> ans;
+
   auto now = steady_clock::now();
 
   auto bound = by_time_.upper_bound(now);
@@ -20,12 +22,15 @@ void TimeController::CleanExpired() {
   auto it = by_time_.begin();
 
   while (it != bound) {
+    ans.push_back(it->second);
     by_key_.erase(it->second);
     it = by_time_.erase(it);
   }
+
+  return ans;
 }
 
-void TimeController::CancelExpiration(const std::string& key) {
+void TimeController::DeleteExpiration(const std::string& key) {
   if (by_key_.find(key) == by_key_.end()) {
     return;
   }

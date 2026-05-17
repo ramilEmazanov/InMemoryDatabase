@@ -13,9 +13,18 @@
 Storage::Storage(MemoryController& memctr, TimeController& timectr)
     : memctr_(memctr), timectr_(timectr) {}
 
+void Storage::ProcessExpired() {
+  auto expired_keys = timectr_.CleanExpired();
+
+  for (auto& key : expired_keys) {
+    EraseValue(key);
+  }
+}
+
 std::expected<void, StorageError> Storage::SetValue(const std::string& key,
                                                     Value&& val) {
   std::size_t size_bytes = CountValueMemoryUsage(val);
+  ProcessExpired();
 
   if (storage_.find(key) != storage_.end()) {
     std::size_t size_val_curr = CountValueMemoryUsage(storage_.at(key).val_);
@@ -42,6 +51,8 @@ std::expected<void, StorageError> Storage::SetValue(const std::string& key,
 
 bool Storage::EraseValue(const std::string& key) {
   if (storage_.find(key) != storage_.end()) {
+    memctr_.SubtractBytes(CountValueMemoryUsage(storage_.at(key).val_));
+    timectr_.DeleteExpiration(key);
     storage_.erase(key);
     return true;
   } else {

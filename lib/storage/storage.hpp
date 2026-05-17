@@ -43,6 +43,8 @@ class Storage {
 
   std::size_t CountKeyMemoryUsage(const std::string& key) const;
 
+  void ProcessExpired();
+
  private:
   std::unordered_map<std::string, Entry> storage_;
   MemoryController& memctr_;
