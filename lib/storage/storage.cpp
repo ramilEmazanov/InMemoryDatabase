@@ -5,15 +5,70 @@
 #include <unordered_map>
 #include <variant>
 
+#include "errors.hpp"
 #include "memory_controller.hpp"
-#include "ttl_index.hpp"
+#include "time_controller.hpp"
 #include "types.hpp"
 
-void Storage::SetValue(std::string key, Value val) {
-  // auto entry = storage_[key];
-  // entry.val_ = val;
-  storage_[key] = Entry{val, std::nullopt, 0};
+Storage::Storage(MemoryController& memctr, TimeController& timectr)
+    : memctr_(memctr), timectr_(timectr) {}
+
+std::expected<void, StorageError> Storage::SetValue(const std::string& key,
+                                                    Value&& val) {
+  std::size_t size_bytes = CountValueMemoryUsage(val);
+
+  if (storage_.find(key) != storage_.end()) {
+    std::size_t size_val_curr = CountValueMemoryUsage(storage_.at(key).val_);
+    std::size_t size_after_ = memctr_.GetStorageMemoryUsage() - size_val_curr;
+
+    if (memctr_.GetMaxMemoryUsage() < size_after_ + size_bytes) {
+      return std::unexpected{
+          OutOfMemoryError{size_bytes, memctr_.GetStorageMemoryUsage()}};
+    } else {
+      memctr_.SubtractBytes(size_val_curr);
+    }
+
+  } else {
+    if (memctr_.WouldOverflow(size_bytes)) {
+      return std::unexpected{
+          OutOfMemoryError{size_bytes, memctr_.GetStorageMemoryUsage()}};
+    }
+  }
+
+  storage_[key] = Entry{std::move(val), std::nullopt, 0};
+  memctr_.AddBytes(size_bytes);
+  return std::expected<void, StorageError>{};
 }
 
-Storage::Storage(MemoryController& memctr, TTLIndex& ttl_ind)
-    : memctr_(memctr), ttl_ind_(ttl_ind) {}
+bool Storage::EraseValue(const std::string& key) {
+  if (storage_.find(key) != storage_.end()) {
+    storage_.erase(key);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool Storage::Exists(const std::string& key) const {
+  if (storage_.find(key) != storage_.end()) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+std::string Storage::GetTypeName(const std::string& key) const {
+  return std::string{};
+}
+
+std::size_t Storage::TotalKeyCount() const { return storage_.size(); }
+
+std::vector<std::string> Storage::FindKeysMatching(std::string pattern) const {
+  return std::vector<std::string>{};
+}
+
+void Storage::Flush() { storage_.clear(); }
+
+std::size_t Storage::CountKeyMemoryUsage(const std::string& key) const {
+  return CountValueMemoryUsage(storage_.at(key).val_);
+}

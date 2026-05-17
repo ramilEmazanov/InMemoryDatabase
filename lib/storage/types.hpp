@@ -26,3 +26,5 @@ struct Entry {
   std::optional<std::chrono::steady_clock::time_point> expire_at_;
   std::size_t size_bytes_;
 };
+
+std::size_t CountValueMemoryUsage(const Value& val);

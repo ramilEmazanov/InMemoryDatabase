@@ -88,4 +88,9 @@ inline std::string FormatParsingError(const ParsingError& err) {
   return std::visit(overload, err);
 }
 
-struct OutOfMemoryError {};
+struct OutOfMemoryError {
+  std::size_t requested_;
+  std::size_t left_;
+};
+
+using StorageError = std::variant<OutOfMemoryError>;

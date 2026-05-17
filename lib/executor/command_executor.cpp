@@ -9,11 +9,7 @@
 Reply CommandExecutor::Execute(const ParsedCommand& command) {
   auto overload = Overload{
       [&](const SetCommand& set_command) {
-        std::string key = set_command.key;
-        std::string val = set_command.value;
-
-        storage_.SetValue(key, StringValue{val});
-
+        storage_.SetValue(set_command.key, StringValue{set_command.value});
         return Reply{VoidReply{}};
       },
       [&](const GetCommand& get_command) {

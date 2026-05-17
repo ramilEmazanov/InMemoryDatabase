@@ -1,15 +1,15 @@
 #include <iostream>
 #include "memory_controller.hpp"
-#include "ttl_index.hpp"
+#include "time_controller.hpp"
 #include "storage.hpp"
 #include "runner.hpp"
 #include "command_executor.hpp"
 
 int main(int argc, const char** argv) {
   MemoryController memctr;
-  TTLIndex ttl_ind;
+  TimeController timectrl;
 
-  Storage storage(memctr, ttl_ind);
+  Storage storage(memctr, timectrl);
 
   CommandExecutor executor(storage, memctr);
 
