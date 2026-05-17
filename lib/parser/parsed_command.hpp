@@ -4,4 +4,4 @@
 #include <variant>
 
 using ParsedCommand = std::variant<SetCommand, GetCommand, StrlenCommand,
-                                   AppendCommand, ExpireCommand>;
+                                   AppendCommand, ExpireCommand, TTLCommand>;

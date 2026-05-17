@@ -66,4 +66,26 @@ struct BadKeyword {
 using ParsingError =
     std::variant<WrongArity, UnknownCommand, BadInteger, BadFloat, BadKeyword>;
 
+inline std::string FormatParsingError(const ParsingError& err) {
+  auto overload = Overload(
+      [&](const WrongArity& e) -> std::string {
+        return std::format("Wrong arity for {}: expected {}, got {}",
+                           e.command_name, e.expected, e.actual);
+      },
+      [&](const UnknownCommand& e) -> std::string {
+        return std::format("Unknown command: {}", e.command_name);
+      },
+      [&](const BadInteger& e) -> std::string {
+        return std::format("Bad integer: {}", e.token);
+      },
+      [&](const BadFloat& e) -> std::string {
+        return std::format("Bad float: {}", e.token);
+      },
+      [&](const BadKeyword& e) -> std::string {
+        return std::format("Bad keyword: {}, expected {}", e.token, e.expected);
+      });
+
+  return std::visit(overload, err);
+}
+
 struct OutOfMemoryError {};

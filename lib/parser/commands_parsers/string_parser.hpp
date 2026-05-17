@@ -12,10 +12,14 @@ std::expected<ParsedCommand, ParsingError> SetCommandParse(
 std::expected<ParsedCommand, ParsingError> GetCommandParse(
     std::span<const Token> arguments);
 
-void StrlenCommandParse();
+std::expected<ParsedCommand, ParsingError> StrlenCommandParse(
+    std::span<const Token> arguments);
 
-void AppendCommandParse();
+std::expected<ParsedCommand, ParsingError> AppendCommandParse(
+    std::span<const Token> arguments);
 
-void ExpireCommandParse();
+std::expected<ParsedCommand, ParsingError> ExpireCommandParse(
+    std::span<const Token> arguments);
 
-void TTLCommandParse();
+std::expected<ParsedCommand, ParsingError> TTLCommandParse(
+    std::span<const Token> arguments);

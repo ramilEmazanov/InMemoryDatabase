@@ -6,10 +6,10 @@ const std::unordered_map<std::string, ParseFunction> GetCommandTable() {
 
   table.emplace("SET", &SetCommandParse);
   table.emplace("GET", &GetCommandParse);
-  // table.emplace("STRLEN", &StrlenCommandParse);
-  // table.emplace("APPEND", &AppendCommandParse);
-  // table.emplace("EXPIRE", &AppendCommandParse);
-  // table.emplace("TTL", &TTLCommandParse);
+  table.emplace("STRLEN", &StrlenCommandParse);
+  table.emplace("APPEND", &AppendCommandParse);
+  table.emplace("EXPIRE", &ExpireCommandParse);
+  table.emplace("TTL", &TTLCommandParse);
 
   return table;
 }

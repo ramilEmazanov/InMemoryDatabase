@@ -1,9 +1,9 @@
 #include "runner.hpp"
 
 #include "command_parser.hpp"
-#include "token.hpp"
-#include "reply_formatter.hpp"
 #include "errors.hpp"
+#include "reply_formatter.hpp"
+#include "token.hpp"
 #include "tokenizer.hpp"
 
 int Runner::Run() {
@@ -13,20 +13,22 @@ int Runner::Run() {
     auto tokens = Tokenizer::Tokenize(line);
 
     if (!tokens.has_value()) {
-      error_out_ << "Tokenizing error : " << FormatLexicalError(tokens.error()) << '\n';
+      error_out_ << "Tokenizing error : " << FormatLexicalError(tokens.error())
+                 << '\n';
       continue;
     }
 
-    auto command = CommandParser::Parse(tokens.value());
+    auto command_parsing_result = CommandParser::Parse(tokens.value());
 
-    if(!command.has_value()) {
-      error_out_ << "!command.has_value()";
+    if (!command_parsing_result.has_value()) {
+      error_out_ << "Parsing error : "
+                 << FormatParsingError(command_parsing_result.error()) << '\n';
+      continue;
     }
 
-    auto reply = executor_.Execute(command.value());
+    auto reply = executor_.Execute(command_parsing_result.value());
 
     ReplyFormatter::Format(reply, out_);
-    
   }
 
   return 0;
