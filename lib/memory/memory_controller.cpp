@@ -1,15 +1,38 @@
 #include "memory_controller.hpp"
 
-#include <cstddef>
+#include <stdexcept>
 
-void MemoryController::AddBytes(std::size_t val) {}
+MemoryController::MemoryController(std::size_t max_bytes)
+    : used_bytes_(0), max_bytes_(max_bytes) {}
 
-void MemoryController::SubtractBytes(std::size_t val) {}
+void MemoryController::AddBytes(std::size_t val) { used_bytes_ += val; }
 
-std::size_t MemoryController::GetStorageMemoryUsage() const {}
+void MemoryController::SubtractBytes(std::size_t val) {
+  used_bytes_ = (val > used_bytes_) ? 0 : used_bytes_ - val;
+}
+
+std::size_t MemoryController::GetStorageMemoryUsage() const {
+  return used_bytes_;
+}
 
 std::size_t MemoryController::GetMaxMemoryUsage() const { return max_bytes_; }
 
-void MemoryController::SetLimitBytes() {}
+void MemoryController::SetLimitBytes(std::size_t max_bytes) {
+  max_bytes_ = max_bytes;
+}
 
-bool MemoryController::WouldOverflow(std::size_t size) const {}
+bool MemoryController::WouldOverflow(std::size_t size) const {
+  if (max_bytes_ == 0) {
+    return false;
+  }
+  return used_bytes_ + size > max_bytes_;
+}
+
+void MemoryController::Reset() { used_bytes_ = 0; }
+
+bool MemoryController::CanReplace(std::size_t curr, std::size_t adding) const {
+  if(max_bytes_ == 0) {
+    return true;
+  }
+  return max_bytes_ - (used_bytes_ - curr) >= adding;
+}

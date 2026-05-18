@@ -54,7 +54,7 @@ struct BadInteger {
   std::string token;
 };
 
-struct BadFloat {
+struct BadDouble {
   std::string token;
 };
 
@@ -64,7 +64,7 @@ struct BadKeyword {
 };
 
 using ParsingError =
-    std::variant<WrongArity, UnknownCommand, BadInteger, BadFloat, BadKeyword>;
+    std::variant<WrongArity, UnknownCommand, BadInteger, BadDouble, BadKeyword>;
 
 inline std::string FormatParsingError(const ParsingError& err) {
   auto overload = Overload(
@@ -78,7 +78,7 @@ inline std::string FormatParsingError(const ParsingError& err) {
       [&](const BadInteger& e) -> std::string {
         return std::format("Bad integer: {}", e.token);
       },
-      [&](const BadFloat& e) -> std::string {
+      [&](const BadDouble& e) -> std::string {
         return std::format("Bad float: {}", e.token);
       },
       [&](const BadKeyword& e) -> std::string {

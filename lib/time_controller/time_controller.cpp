@@ -48,3 +48,8 @@ void TimeController::DeleteExpiration(const std::string& key) {
     begin++;
   }
 }
+
+void TimeController::Reset() {
+  by_key_.clear();
+  by_time_.clear();
+}

@@ -14,6 +14,8 @@ class TimeController {
 
   void DeleteExpiration(const std::string& key);
 
+  void Reset();
+
  private:
   std::multimap<std::chrono::steady_clock::time_point, std::string> by_time_;
   std::unordered_map<std::string, std::chrono::steady_clock::time_point>
