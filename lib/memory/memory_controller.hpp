@@ -4,7 +4,7 @@
 
 class MemoryController {
  public:
-  MemoryController(std::size_t max_bytes = 0);
+  MemoryController(std::size_t max_bytes);
 
   void AddBytes(std::size_t val);
 
@@ -17,10 +17,6 @@ class MemoryController {
   void SetLimitBytes(std::size_t max_bytes);
 
   bool WouldOverflow(std::size_t size) const;
-
-  void Reset();
-
-  bool CanReplace(std::size_t curr, std::size_t adding) const;
 
  private:
   std::size_t used_bytes_;

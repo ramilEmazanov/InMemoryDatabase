@@ -14,7 +14,7 @@ class TimeController {
 
   void DeleteExpiration(const std::string& key);
 
-  void Reset();
+  long long GetRemainingSeconds(const std::string& key) const;
 
  private:
   std::multimap<std::chrono::steady_clock::time_point, std::string> by_time_;

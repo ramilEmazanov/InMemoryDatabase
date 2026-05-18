@@ -6,8 +6,14 @@
 
 struct VoidReply {};
 
+struct NilReply {};
+
 struct IntegerReply {
   long long num;
+};
+
+struct UnsignedIntReply {
+  unsigned long long num;
 };
 
 struct StringReply {
@@ -22,5 +28,5 @@ struct ErrorReply {
   std::string message;
 };
 
-using Reply =
-    std::variant<VoidReply, IntegerReply, StringReply, ArrayReply, ErrorReply>;
+using Reply = std::variant<VoidReply, NilReply, UnsignedIntReply, IntegerReply,
+                           StringReply, ArrayReply, ErrorReply>;

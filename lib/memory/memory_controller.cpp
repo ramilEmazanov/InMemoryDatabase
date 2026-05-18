@@ -27,12 +27,3 @@ bool MemoryController::WouldOverflow(std::size_t size) const {
   }
   return used_bytes_ + size > max_bytes_;
 }
-
-void MemoryController::Reset() { used_bytes_ = 0; }
-
-bool MemoryController::CanReplace(std::size_t curr, std::size_t adding) const {
-  if(max_bytes_ == 0) {
-    return true;
-  }
-  return max_bytes_ - (used_bytes_ - curr) >= adding;
-}

@@ -25,14 +25,14 @@ using LexicalError = std::variant<UnterminatedString, InvalidEscapeSequence,
 
 inline std::string FormatLexicalError(const LexicalError& err) {
   auto overload = Overload(
-      [&](UnterminatedString st) -> std::string {
+      [&](UnterminatedString st) {
         return std::format("Unterminated string in column {} ", st.column);
       },
-      [&](InvalidEscapeSequence st) -> std::string {
+      [&](InvalidEscapeSequence st) {
         return std::format("Invalid Escape Sequence : {} at column {}",
                            st.character, st.column);
       },
-      [&](UnexpectedControlCharacter st) -> std::string {
+      [&](UnexpectedControlCharacter st) {
         return std::format("Unexpected Control Character : {} at column {}",
                            st.character, st.column);
       });
@@ -68,20 +68,18 @@ using ParsingError =
 
 inline std::string FormatParsingError(const ParsingError& err) {
   auto overload = Overload(
-      [&](const WrongArity& e) -> std::string {
+      [&](const WrongArity& e) {
         return std::format("Wrong arity for {}: expected {}, got {}",
                            e.command_name, e.expected, e.actual);
       },
-      [&](const UnknownCommand& e) -> std::string {
+      [&](const UnknownCommand& e) {
         return std::format("Unknown command: {}", e.command_name);
       },
-      [&](const BadInteger& e) -> std::string {
+      [&](const BadInteger& e) {
         return std::format("Bad integer: {}", e.token);
       },
-      [&](const BadDouble& e) -> std::string {
-        return std::format("Bad float: {}", e.token);
-      },
-      [&](const BadKeyword& e) -> std::string {
+      [&](const BadDouble& e) { return std::format("Bad float: {}", e.token); },
+      [&](const BadKeyword& e) {
         return std::format("Bad keyword: {}, expected {}", e.token, e.expected);
       });
 
@@ -93,4 +91,30 @@ struct OutOfMemoryError {
   std::size_t left_;
 };
 
-using StorageError = std::variant<OutOfMemoryError>;
+struct WrongTypeRequested {
+  std::string requested_;
+  std::string left_;
+};
+
+struct NoSuchKey {
+  std::string key_;
+};
+
+using StorageError =
+    std::variant<OutOfMemoryError, WrongTypeRequested, NoSuchKey>;
+
+inline std::string FormatStorageError(const StorageError& err) {
+  auto overload = Overload(
+      [&](const OutOfMemoryError& e) {
+        return std::format(
+            "OOM command not allowed when used memory > 'maxmemory'");
+      },
+      [&](const WrongTypeRequested&) -> std::string {
+        return "WRONGTYPE Operation against a key holding the wrong kind of "
+               "value";
+      },
+      [&](const NoSuchKey& e) {
+        return std::format("ERR no such key '{}'", e.key_);
+      });
+  return std::visit(overload, err);
+}

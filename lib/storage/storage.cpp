@@ -23,18 +23,19 @@ void Storage::ProcessExpired() {
 
 std::expected<void, StorageError> Storage::SetValue(const std::string& key,
                                                     Value&& val) {
-  ProcessExpired();
   std::size_t size_bytes = CountValueMemoryUsage(val);
+  ProcessExpired();
 
   if (storage_.find(key) != storage_.end()) {
     std::size_t size_val_curr = CountValueMemoryUsage(storage_.at(key).val_);
+    std::size_t size_after_ = memctr_.GetStorageMemoryUsage() - size_val_curr;
 
-    if (!memctr_.CanReplace(size_val_curr, size_bytes)) {
+    if (memctr_.GetMaxMemoryUsage() < size_after_ + size_bytes) {
       return std::unexpected{
           OutOfMemoryError{size_bytes, memctr_.GetStorageMemoryUsage()}};
+    } else {
+      memctr_.SubtractBytes(size_val_curr);
     }
-
-    memctr_.SubtractBytes(size_val_curr);
 
   } else {
     if (memctr_.WouldOverflow(size_bytes)) {
@@ -77,12 +78,20 @@ std::vector<std::string> Storage::FindKeysMatching(std::string pattern) const {
   return std::vector<std::string>{};
 }
 
-void Storage::Flush() {
-  memctr_.Reset();
-  timectr_.Reset();
-  storage_.clear();
-}
+void Storage::Flush() { storage_.clear(); }
 
 std::size_t Storage::CountKeyMemoryUsage(const std::string& key) const {
   return CountValueMemoryUsage(storage_.at(key).val_);
+}
+
+void Storage::SetKeyExpiration(const std::string& key, std::size_t seconds) {
+  timectr_.SetExpiration(key, seconds);
+}
+
+long long Storage::GetKeyTTL(const std::string& key) {
+  ProcessExpired();
+  if (storage_.find(key) == storage_.end()) {
+    return -2;
+  }
+  return timectr_.GetRemainingSeconds(key);
 }

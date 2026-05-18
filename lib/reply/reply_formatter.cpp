@@ -6,20 +6,31 @@
 
 void ReplyFormatter::Format(const Reply& reply, std::ostream& out) {
   auto overload = Overload(
-    [&](const VoidReply& void_reply) {
-      out << "SUCCESS\n";
+    [&](const VoidReply&) {
+      out << "OK\n";
     },
-    [&](const IntegerReply& integer_reply) {
-      out << "integer_reply\n";
+    [&](const NilReply&) {
+      out << "(nil)\n";
     },
-    [&](const StringReply& string_reply) {
-      out << string_reply.value << '\n';
+    [&](const IntegerReply& r) {
+      out << "(integer) " << r.num << '\n';
     },
-    [&](const ArrayReply& array_reply) {
-      out << "array_reply\n";
+    [&](const UnsignedIntReply& r) {
+      out << "(integer) " << r.num << '\n';
     },
-    [&](const ErrorReply& error) {
-      out << "error_reply\n";
+    [&](const StringReply& r) {
+      out << '"' << r.value << '"' << '\n';
+    },
+    [&](const ArrayReply& r) {
+      for (std::size_t i = 0; i < r.arr.size(); ++i) {
+        out << (i + 1) << ") \"" << r.arr[i] << "\"\n";
+      }
+      if (r.arr.empty()) {
+        out << "(empty array)\n";
+      }
+    },
+    [&](const ErrorReply& e) {
+      out << "(error) " << e.message << '\n';
     }
   );
 

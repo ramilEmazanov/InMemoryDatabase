@@ -30,6 +30,17 @@ std::vector<std::string> TimeController::CleanExpired() {
   return ans;
 }
 
+long long TimeController::GetRemainingSeconds(const std::string& key) const {
+  auto it = by_key_.find(key);
+  if (it == by_key_.end()) {
+    return -1;
+  }
+  auto remaining = std::chrono::duration_cast<std::chrono::seconds>(
+                       it->second - steady_clock::now())
+                       .count();
+  return remaining > 0 ? remaining : 0;
+}
+
 void TimeController::DeleteExpiration(const std::string& key) {
   if (by_key_.find(key) == by_key_.end()) {
     return;
@@ -47,9 +58,4 @@ void TimeController::DeleteExpiration(const std::string& key) {
     }
     begin++;
   }
-}
-
-void TimeController::Reset() {
-  by_key_.clear();
-  by_time_.clear();
 }
