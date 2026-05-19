@@ -68,43 +68,181 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
       },
 
       [&](const RPush& cmd) {
+        auto result = storage_.MutateValueAdd<ListValue>(
+            cmd.key, cmd.strs, [&](ListValue& list) {
+              for (const auto& s : cmd.strs) {
+                list.push_back(s);
+              }
+            });
+        if (!result.has_value()) {
+          return Reply{ErrorReply{FormatStorageError(result.error())}};
+        }
+        return Reply{UnsignedIntReply{result.value()}};
+      },
+      [&](const LPush& cmd) {
+        auto result = storage_.MutateValueAdd<ListValue>(
+            cmd.key, cmd.strs, [&](ListValue& list) {
+              for (const auto& s : cmd.strs) {
+                list.push_front(s);
+              }
+            });
+        if (!result.has_value()) {
+          return Reply{ErrorReply{FormatStorageError(result.error())}};
+        }
+        return Reply{UnsignedIntReply{result.value()}};
+      },
+      [&](const LPop& cmd) {
         auto reply = storage_.GetValueAs<ListValue>(cmd.key);
 
         if (!reply.has_value()) {
-          if (std::holds_alternative<WrongTypeRequested>(reply.error())) {
-            return Reply{ErrorReply{FormatStorageError(reply.error())}};
-          } else {
-            ListValue vals(cmd.strs.begin(), cmd.strs.end());
-            std::size_t size = vals.size();
-            storage_.SetValue(cmd.key, std::move(vals));
-
-            return Reply{UnsignedIntReply{size}};
+          if (std::holds_alternative<NoSuchKey>(reply.error())) {
+            return Reply{NilReply{}};
           }
+          return Reply{ErrorReply{FormatStorageError(reply.error())}};
         }
 
-        for (const auto& val : cmd.strs) {
-          reply.value()->emplace_back(val);
+        std::vector<std::string> response;
+
+        std::size_t count = cmd.count.value_or(1);
+
+        auto begin = reply.value()->begin();
+        auto end = count > reply.value()->size() ? reply.value()->end()
+                                                 : begin + count;
+
+        while (begin != end) {
+          response.emplace_back(*begin);
+          begin++;
         }
 
-        return Reply{UnsignedIntReply{reply.value()->size()}};
+        auto mutate = storage_.MutateValueSubtr<ListValue>(
+            cmd.key, std::vector<std::string>{}, [&](ListValue& list) {
+              for (std::size_t i = 0; i < count; ++i) {
+                list.pop_front();
+              }
+            });
+
+        if (!mutate.has_value()) {
+          return Reply{ErrorReply{FormatStorageError(mutate.error())}};
+        }
+
+        if (!cmd.count.has_value()) {
+          return Reply{BulkStringReply{std::move(response.front())}};
+        }
+
+        return Reply{ArrayReply{std::move(response)}};
       },
-      [&](const LPush&) { return Reply{}; },
-      [&](const LPop&) { return Reply{}; },
-      [&](const RPop&) { return Reply{}; },
-      [&](const LLen&) { return Reply{}; },
-      [&](const LRange&) { return Reply{}; },
-      [&](const LIndex&) { return Reply{}; },
-      [&](const LSet&) { return Reply{}; },
-      [&](const LInsert&) { return Reply{}; },
-      [&](const SAdd&) { return Reply{}; },
-      [&](const SRem&) { return Reply{}; },
-      [&](const SIsMember&) { return Reply{}; },
-      [&](const SMembers&) { return Reply{}; },
-      [&](const SCard&) { return Reply{}; },
-      [&](const SUnion&) { return Reply{}; },
-      [&](const SInter&) { return Reply{}; },
-      [&](const SDiff&) { return Reply{}; },
-      [&](const SMove&) { return Reply{}; },
+      [&](const RPop& cmd) {
+        auto reply = storage_.GetValueAs<ListValue>(cmd.key);
+
+        if (!reply.has_value()) {
+          if (std::holds_alternative<NoSuchKey>(reply.error())) {
+            return Reply{NilReply{}};
+          }
+          return Reply{ErrorReply{FormatStorageError(reply.error())}};
+        }
+
+        std::vector<std::string> response;
+
+        std::size_t count = cmd.count.value_or(1);
+
+        auto begin = reply.value()->rend();
+        auto end = count > reply.value()->size() ? reply.value()->end()
+                                                 : begin + count;
+
+        while (begin != end) {
+          response.emplace_back(*begin);
+          begin++;
+        }
+
+        auto mutate = storage_.MutateValueSubtr<ListValue>(
+            cmd.key, std::vector<std::string>{}, [&](ListValue& list) {
+              for (std::size_t i = 0; i < count; ++i) {
+                list.pop_front();
+              }
+            });
+
+        if (!mutate.has_value()) {
+          return Reply{ErrorReply{FormatStorageError(mutate.error())}};
+        }
+
+        if (!cmd.count.has_value()) {
+          return Reply{BulkStringReply{std::move(response.front())}};
+        }
+
+        return Reply{ArrayReply{std::move(response)}};
+      },
+      [&](const LLen&) {
+        // GetValue + size method
+        // Size, otherwise if there is no then 0
+        return Reply{};
+      },
+      [&](const LRange&) {
+        // GetValue + проход
+        // Включительно правый край
+        // If stop is bigger than size -> turn it into the last
+        // Array of elements, otherwise empty array
+        return Reply{};
+      },
+      [&](const LIndex&) {
+        // GetValue + operator[]
+        // NilReply - index out of range
+        // BulkString - string
+        // Также поддерживаем отрицательные
+        return Reply{};
+      },
+      [&](const LSet&) {
+        // Error if out of range
+        // в MutateValue передать лямбду которая в Value по индексу изменит
+        // и вектор из 1-го элемента
+        return Reply{};
+      },
+      [&](const LInsert&) {
+        // Аналогично LSet но в лямбде попросим lower_bound
+        // List length if success
+        // 0 if does not exist
+        // - 1 if pivot not found
+        return Reply{};
+      },
+      [&](const SAdd&) {
+        // SetValue
+        // Number of elements that were added
+        return Reply{};
+      },
+      [&](const SRem&) {
+        // Number of elements that removed not including non existing
+        return Reply{};
+      },
+      [&](const SIsMember&) {
+        // 0 if not
+        // 1 if yes
+        return Reply{};
+      },
+      [&](const SMembers&) {
+        // Elements, otherwise empty array
+        return Reply{};
+      },
+      [&](const SCard&) {
+        // if does not exist
+        // else cardinality
+        return Reply{};
+      },
+      [&](const SUnion&) {
+        // Just a union
+        return Reply{};
+      },
+      [&](const SInter&) {
+        // Just an intersection
+        return Reply{};
+      },
+      [&](const SDiff&) {
+        // Just a diff
+        return Reply{};
+      },
+      [&](const SMove&) {
+        // 1 if moved
+        // 0 else
+        return Reply{};
+      },
       [&](const GeoAdd&) { return Reply{}; },
       [&](const GeoPos&) { return Reply{}; },
       [&](const GeoDist&) { return Reply{}; },
@@ -120,15 +258,49 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
       [&](const TTLCommand& cmd) {
         return Reply{IntegerReply{storage_.GetKeyTTL(cmd.key)}};
       },
-      [&](const TypeCommand&) { return Reply{}; },
-      [&](const DelCommand&) { return Reply{}; },
-      [&](const ExistsCommand&) { return Reply{}; },
-      [&](const KeysCommand&) { return Reply{}; },
-      [&](const FlushDbCommand&) { return Reply{}; },
-      [&](const ConfigSetCommand&) { return Reply{}; },
-      [&](const ConfigGetCommand&) { return Reply{}; },
-      [&](const DbSizeCommand&) { return Reply{}; },
-      [&](const MemoryUsageCommand&) { return Reply{}; }};
+      [&](const TypeCommand& cmd) {
+        // string, list, zzset, hash
+        // none if not exist key
+
+        storage_.GetTypeName(cmd.key);
+        return Reply{};
+      },
+      [&](const DelCommand& cmd) {
+        for (const auto& key : cmd.keys) {
+          storage_.EraseValue(key);
+        }
+        return Reply{};
+      },
+      [&](const ExistsCommand& cmd) {
+        for (const auto& key : cmd.keys) {
+          storage_.Exists(key);
+        }
+        return Reply{};
+      },
+      [&](const KeysCommand& cmd) {
+        storage_.FindKeysMatching(cmd.pattern);
+        return Reply{};
+      },
+      [&](const FlushDbCommand&) {
+        storage_.Flush();
+        return Reply{};
+      },
+      [&](const ConfigSetCommand& cmd) {
+        storage_.SetLimitMemory(0);
+        return Reply{};
+      },
+      [&](const ConfigGetCommand&) {
+        storage_.GetMaxMemory();
+        return Reply{};
+      },
+      [&](const DbSizeCommand&) {
+        storage_.GetTotalKeyCount();
+        return Reply{};
+      },
+      [&](const MemoryUsageCommand& cmd) {
+        storage_.CountKeyMemoryUsage(cmd.key);
+        return Reply{};
+      }};
 
   return std::visit(overload, command);
 }

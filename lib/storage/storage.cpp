@@ -72,7 +72,7 @@ std::string Storage::GetTypeName(const std::string& key) const {
   return std::string{};
 }
 
-std::size_t Storage::TotalKeyCount() const { return storage_.size(); }
+std::size_t Storage::GetTotalKeyCount() const { return storage_.size(); }
 
 std::vector<std::string> Storage::FindKeysMatching(std::string pattern) const {
   return std::vector<std::string>{};
@@ -94,4 +94,12 @@ long long Storage::GetKeyTTL(const std::string& key) {
     return -2;
   }
   return timectr_.GetRemainingSeconds(key);
+}
+
+std::size_t Storage::GetMaxMemory() const {
+  return memctr_.GetMaxMemoryUsage();
+}
+
+void Storage::SetLimitMemory(std::size_t limit) const {
+  memctr_.SetLimitBytes(limit);
 }

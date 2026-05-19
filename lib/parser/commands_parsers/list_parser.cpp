@@ -45,17 +45,18 @@ std::expected<ParsedCommand, ParsingError> LPopCommandParse(
     return std::unexpected(WrongArity{"LPOP", 2, arguments.size() - 1});
   }
 
-  std::size_t count = 1;
-
-  if (arguments.size() == 4) {
-    try {
-      count = std::stoull(arguments[2].lexeme);
-    } catch (...) {
-      return std::unexpected(BadInteger{arguments[2].lexeme});
-    }
+  if (arguments.size() == 3) {
+    return LPop{arguments[1].lexeme, std::nullopt};
   }
 
-  return LPop{arguments[1].lexeme, count};
+  long long count = 0;
+  try {
+    count = std::stoll(arguments[2].lexeme);
+  } catch (...) {
+    return std::unexpected(BadInteger{arguments[2].lexeme});
+  }
+
+  return LPop{arguments[1].lexeme, static_cast<std::size_t>(count)};
 }
 
 std::expected<ParsedCommand, ParsingError> RPopCommandParse(
@@ -64,17 +65,18 @@ std::expected<ParsedCommand, ParsingError> RPopCommandParse(
     return std::unexpected(WrongArity{"RPOP", 2, arguments.size() - 1});
   }
 
-  std::size_t count = 1;
-
-  if (arguments.size() == 4) {
-    try {
-      count = std::stoull(arguments[2].lexeme);
-    } catch (...) {
-      return std::unexpected(BadInteger{arguments[2].lexeme});
-    }
+  if (arguments.size() == 3) {
+    return RPop{arguments[1].lexeme, std::nullopt};
   }
 
-  return RPop{arguments[1].lexeme, count};
+  long long count = 0;
+  try {
+    count = std::stoll(arguments[2].lexeme);
+  } catch (...) {
+    return std::unexpected(BadInteger{arguments[2].lexeme});
+  }
+
+  return RPop{arguments[1].lexeme, static_cast<std::size_t>(count)};
 }
 
 std::expected<ParsedCommand, ParsingError> LLenCommandParse(

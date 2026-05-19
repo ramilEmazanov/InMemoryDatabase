@@ -31,6 +31,9 @@ void ReplyFormatter::Format(const Reply& reply, std::ostream& out) {
     },
     [&](const ErrorReply& e) {
       out << "(error) " << e.message << '\n';
+    },
+    [&](const BulkStringReply& e) {
+      out << e.message << '\n';
     }
   );
 

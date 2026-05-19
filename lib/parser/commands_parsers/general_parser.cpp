@@ -107,7 +107,7 @@ std::expected<ParsedCommand, ParsingError> ConfigCommandParse(
     if (arguments.size() != 5) {
       return std::unexpected(WrongArity{"CONFIG SET", 4, arguments.size() - 1});
     }
-    return ConfigSetCommand{arguments[2].lexeme, arguments[3].lexeme};
+    return ConfigSetCommand{arguments[3].lexeme};
   }
 
   if (subcommand == "GET") {

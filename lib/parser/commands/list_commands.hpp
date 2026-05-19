@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -15,12 +16,12 @@ struct RPush {
 
 struct LPop {
   std::string key;
-  std::size_t count;
+  std::optional<std::size_t> count;
 };
 
 struct RPop {
   std::string key;
-  std::size_t count;
+  std::optional<std::size_t> count;
 };
 
 struct LLen {
