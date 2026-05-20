@@ -18,6 +18,8 @@ class MemoryController {
 
   bool WouldOverflow(std::size_t size) const;
 
+  void Reset();
+
  private:
   std::size_t used_bytes_;
   std::size_t max_bytes_;

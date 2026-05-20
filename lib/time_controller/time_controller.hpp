@@ -16,6 +16,8 @@ class TimeController {
 
   long long GetRemainingSeconds(const std::string& key) const;
 
+  void Reset();
+
  private:
   std::multimap<std::chrono::steady_clock::time_point, std::string> by_time_;
   std::unordered_map<std::string, std::chrono::steady_clock::time_point>

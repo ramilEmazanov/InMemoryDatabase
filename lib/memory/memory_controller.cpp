@@ -28,3 +28,5 @@ bool MemoryController::WouldOverflow(std::size_t size) const {
 
   return used_bytes_ + size > max_bytes_;
 }
+
+void MemoryController::Reset() { used_bytes_ = 0; }

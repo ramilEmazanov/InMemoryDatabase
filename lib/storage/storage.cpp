@@ -78,7 +78,11 @@ std::vector<std::string> Storage::FindKeysMatching(std::string pattern) const {
   return std::vector<std::string>{};
 }
 
-void Storage::Flush() { storage_.clear(); }
+void Storage::Flush() {
+  timectr_.Reset();
+  memctr_.Reset();
+  storage_.clear();
+}
 
 std::size_t Storage::CountKeyMemoryUsage(const std::string& key) const {
   return CountValueMemoryUsage(storage_.at(key).val_);
@@ -100,6 +104,6 @@ std::size_t Storage::GetMaxMemory() const {
   return memctr_.GetMaxMemoryUsage();
 }
 
-void Storage::SetLimitMemory(std::size_t limit) const {
+void Storage::SetLimitMemory(std::size_t limit) {
   memctr_.SetLimitBytes(limit);
 }

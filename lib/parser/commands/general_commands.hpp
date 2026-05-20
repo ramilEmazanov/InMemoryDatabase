@@ -32,7 +32,8 @@ struct KeysCommand {
 struct FlushDbCommand {};
 
 struct ConfigSetCommand {
-  std::string value;
+  std::string parameter;
+  std::size_t value;
 };
 
 struct ConfigGetCommand {

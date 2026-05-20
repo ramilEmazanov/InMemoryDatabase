@@ -91,8 +91,7 @@ class Storage {
       return container.size();
     }
 
-    // T* container = GetValueAs<T>(key);
-    // func(container);
+    return delta;
   }
 
   template <ContainerType T, typename Func>
@@ -150,7 +149,7 @@ class Storage {
 
   std::size_t GetMaxMemory() const;
 
-  void SetLimitMemory(std::size_t limit) const;
+  void SetLimitMemory(std::size_t limit);
 
  private:
   std::unordered_map<std::string, Entry> storage_;

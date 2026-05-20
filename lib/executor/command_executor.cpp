@@ -116,7 +116,7 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
         }
 
         auto mutate = storage_.MutateValueSubtr<ListValue>(
-            cmd.key, std::vector<std::string>{}, [&](ListValue& list) {
+            cmd.key, response, [&](ListValue& list) {
               std::size_t n = std::min(count, list.size());
               for (std::size_t i = 0; i < n; ++i) {
                 list.pop_front();
@@ -232,7 +232,7 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
         }
 
         std::size_t size = reply.value()->size();
-        std::size_t ind = cmd.ind < 0 ? cmd.ind + size : cmd.ind;
+        long long ind = cmd.ind < 0 ? cmd.ind + size : cmd.ind;
 
         if (ind < 0 || ind >= size) {
           return Reply{NilReply{}};
@@ -385,8 +385,8 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
         return Reply{};
       },
       [&](const ConfigSetCommand& cmd) {
-        storage_.SetLimitMemory(0);
-        return Reply{};
+        storage_.SetLimitMemory(cmd.value);
+        return Reply{VoidReply{}};
       },
       [&](const ConfigGetCommand&) {
         storage_.GetMaxMemory();
