@@ -16,7 +16,7 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
   auto overload = Overload{
       [&](const SetCommand& set_command) {
         auto reply =
-            storage_.SetValue(set_command.key, StringValue{set_command.value});
+            storage_.PutValue(set_command.key, StringValue{set_command.value});
 
         if (!reply.has_value()) {
           return Reply{ErrorReply{FormatStorageError(reply.error())}};
@@ -60,7 +60,7 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
         std::string added = now + append_command.value;
 
         auto set_reply =
-            storage_.SetValue(append_command.key, StringValue{added});
+            storage_.PutValue(append_command.key, StringValue{added});
 
         if (!set_reply.has_value()) {
           return Reply{ErrorReply{FormatStorageError(set_reply.error())}};
@@ -312,7 +312,7 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
             for (const auto& val : cmd.members) {
               set.insert(val);
             }
-            storage_.SetValue(cmd.key, std::move(set));
+            storage_.PutValue(cmd.key, std::move(set));
 
             return Reply{UnsignedIntReply{cmd.members.size()}};
           } else {
@@ -558,8 +558,8 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
         auto main_set = storage_.GetValueAs<SetValue>(cmd.keys[0]);
         std::unordered_set<std::string> temp = *(main_set.value());
 
-        for (const auto& key : cmd.keys) {
-          auto result = storage_.GetValueAs<SetValue>(key);
+        for (std::size_t i = 1; i < cmd.keys.size(); ++i) {
+          auto result = storage_.GetValueAs<SetValue>(cmd.keys[i]);
 
           if (!result.has_value()) {
             continue;
@@ -600,10 +600,10 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
 
         auto dest_resp = storage_.GetValueAs<SetValue>(cmd.destination);
         if (!dest_resp.has_value()) {
-          if (std::holds_alternative<NoSuchKey>(source_resp.error())) {
+          if (std::holds_alternative<NoSuchKey>(dest_resp.error())) {
             std::unordered_set<std::string> new_;
             new_.insert(cmd.member);
-            storage_.SetValue(cmd.destination, std::move(new_));
+            storage_.PutValue(cmd.destination, std::move(new_));
             return Reply{UnsignedIntReply{1}};
           } else {
             return Reply{ErrorReply{FormatStorageError(source_resp.error())}};
@@ -800,7 +800,7 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
         }
         std::size_t count = new_geo.size();
 
-        auto store_result = storage_.SetValue(cmd.dest, std::move(new_geo));
+        auto store_result = storage_.PutValue(cmd.dest, std::move(new_geo));
         if (!store_result.has_value()) {
           return Reply{ErrorReply{FormatStorageError(store_result.error())}};
         }
@@ -818,11 +818,7 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
         return Reply{IntegerReply{storage_.GetKeyTTL(cmd.key)}};
       },
       [&](const TypeCommand& cmd) {
-        // string, list, zzset, hash
-        // none if not exist key
-
-        storage_.GetTypeName(cmd.key);
-        return Reply{};
+        return Reply{BulkStringReply{storage_.GetTypeName(cmd.key)}};
       },
       [&](const DelCommand& cmd) {
         for (const auto& key : cmd.keys) {

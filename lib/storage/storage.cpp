@@ -7,6 +7,7 @@
 
 #include "errors.hpp"
 #include "memory_controller.hpp"
+#include "overload.hpp"
 #include "time_controller.hpp"
 #include "types.hpp"
 
@@ -21,7 +22,7 @@ void Storage::ProcessExpired() {
   }
 }
 
-std::expected<void, StorageError> Storage::SetValue(const std::string& key,
+std::expected<void, StorageError> Storage::PutValue(const std::string& key,
                                                     Value&& val) {
   std::size_t size_bytes = CountValueMemoryUsage(val);
   ProcessExpired();
@@ -126,7 +127,17 @@ std::expected<std::size_t, StorageError> Storage::GeoAddPoints(
 }
 
 std::string Storage::GetTypeName(const std::string& key) const {
-  return std::string{};
+  auto it = storage_.find(key);
+  if (it == storage_.end()) {
+    return "none";
+  }
+  auto overload =
+      Overload{[](const StringValue&) { return std::string{"string"}; },
+               [](const GeoValue&) { return std::string{"geo"}; },
+               [](const SetValue&) { return std::string{"set"}; },
+               [](const ListValue&) { return std::string{"list"}; }};
+
+  return std::visit(overload, it->second.val_);
 }
 
 std::size_t Storage::GetTotalKeyCount() const { return storage_.size(); }

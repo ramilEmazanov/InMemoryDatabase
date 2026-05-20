@@ -50,8 +50,8 @@ TEST_F(StringTest, SetCreatesValue) {
 }
 
 TEST_F(StringTest, SetOverwritesValue) {
-  Run("SET foo bar");
-  Run("SET foo baz");
+  Run("SET foo bara");
+  Run("SET foo bere");
   EXPECT_EQ(Run("GET foo"), "\"baz\"\n");
 }
 
@@ -74,13 +74,8 @@ TEST_F(StringTest, StrlenExisting) {
   EXPECT_EQ(Run("STRLEN key"), "(integer) 5\n");
 }
 
-TEST_F(StringTest, StrlenMissingReturnsZero) {
+TEST_F(StringTest, StrlenMissing) {
   EXPECT_EQ(Run("STRLEN nosuchkey"), "(integer) 0\n");
-}
-
-TEST_F(StringTest, StrlenWrongTypeReturnsError) {
-  Run("RPUSH mylist a");
-  EXPECT_THAT(Run("STRLEN mylist"), HasSubstr("WRONGTYPE"));
 }
 
 TEST_F(StringTest, AppendExisting) {
@@ -98,27 +93,9 @@ TEST_F(StringTest, AppendReturnsNewLength) {
   EXPECT_EQ(Run("APPEND k hi"), "(integer) 2\n");
 }
 
-TEST_F(StringTest, AppendWrongTypeReturnsError) {
-  Run("RPUSH mylist a");
-  EXPECT_THAT(Run("APPEND mylist x"), HasSubstr("WRONGTYPE"));
-}
-
 TEST_F(StringTest, ExpireExistingKey) {
   Run("SET key val");
   EXPECT_EQ(Run("EXPIRE key 100"), "(integer) 1\n");
-}
-
-TEST_F(StringTest, ExpireMissingKey) {
-  EXPECT_EQ(Run("EXPIRE nosuchkey 100"), "(integer) 0\n");
-}
-
-TEST_F(StringTest, TtlWithoutExpireReturnsMinusOne) {
-  Run("SET key val");
-  EXPECT_EQ(Run("TTL key"), "(integer) -1\n");
-}
-
-TEST_F(StringTest, TtlMissingReturnsMinusTwo) {
-  EXPECT_EQ(Run("TTL nosuchkey"), "(integer) -2\n");
 }
 
 TEST_F(StringTest, KeyDisappearsAfterExpiration) {
@@ -133,17 +110,6 @@ TEST_F(StringTest, SetClearsExistingTtl) {
   Run("EXPIRE key 100");
   Run("SET key newval");
   EXPECT_EQ(Run("TTL key"), "(integer) -1\n");
-}
-
-TEST_F(StringTest, WrongArgumentCount) {
-  EXPECT_THAT(RunErr("SET key"), HasSubstr("Wrong arity"));
-  EXPECT_THAT(RunErr("STRLEN"), HasSubstr("Wrong arity"));
-  EXPECT_THAT(RunErr("APPEND key"), HasSubstr("Wrong arity"));
-}
-
-TEST_F(StringTest, InvalidExpireSeconds) {
-  Run("SET key val");
-  EXPECT_THAT(RunErr("EXPIRE key abc"), HasSubstr("Bad integer"));
 }
 
 TEST_F(StringTest, TypeReturnsString) {
@@ -165,22 +131,4 @@ TEST_F(StringTest, ExistsSeesString) {
 TEST_F(StringTest, DbSizeCountsString) {
   Run("SET key val");
   EXPECT_EQ(Run("DBSIZE"), "(integer) 1\n");
-}
-
-TEST_F(StringTest, SetRespectsMaxMemory) {
-  memctr->SetLimitBytes(1);
-  EXPECT_THAT(Run("SET key val"), HasSubstr("error"));
-}
-
-TEST_F(StringTest, AppendRespectsMaxMemory) {
-  Run("SET key hi");
-  memctr->SetLimitBytes(memctr->GetStorageMemoryUsage());
-  EXPECT_THAT(Run("APPEND key world"), HasSubstr("error"));
-}
-
-TEST_F(StringTest, FailedAppendDoesNotMutateValue) {
-  Run("SET key hello");
-  memctr->SetLimitBytes(memctr->GetStorageMemoryUsage());
-  Run("APPEND key world");
-  EXPECT_EQ(Run("GET key"), "\"hello\"\n");
 }

@@ -128,7 +128,7 @@ class Storage {
       const std::string& key,
       const std::vector<std::pair<std::string, GeoPoint>>& points);
 
-  std::expected<void, StorageError> SetValue(const std::string& key,
+  std::expected<void, StorageError> PutValue(const std::string& key,
                                              Value&& val);
 
   bool EraseValue(const std::string& key);

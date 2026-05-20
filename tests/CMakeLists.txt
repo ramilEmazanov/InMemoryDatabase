@@ -1,6 +1,7 @@
 add_executable(labwork10_tests
   string_tests.cpp
   list_tests.cpp
+  set_tests.cpp
 )
 
 target_link_libraries(labwork10_tests PRIVATE
