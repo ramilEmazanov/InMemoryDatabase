@@ -36,12 +36,12 @@ struct LRange {
 
 struct LIndex {
   std::string key;
-  std::size_t ind;
+  long long ind;
 };
 
 struct LSet {
   std::string key;
-  std::size_t ind;
+  long long ind;
   std::string val;
 };
 

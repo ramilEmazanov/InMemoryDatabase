@@ -95,6 +95,36 @@ class Storage {
     // func(container);
   }
 
+  template <ContainerType T, typename Func>
+  std::expected<std::size_t, StorageError> MutateValueInPlace(
+      const std::string& key, std::size_t old_bytes, std::size_t new_bytes,
+      Func&& func) {
+    ProcessExpired();
+
+    auto it = storage_.find(key);
+
+    if (it == storage_.end()) {
+      return std::unexpected{StorageError{NoSuchKey{key}}};
+    }
+
+    if (!std::holds_alternative<T>(it->second.val_)) {
+      return std::unexpected{StorageError{WrongTypeRequested{}}};
+    }
+
+    if (new_bytes > old_bytes && memctr_.WouldOverflow(new_bytes - old_bytes)) {
+      return std::unexpected{StorageError{OutOfMemoryError{
+          new_bytes - old_bytes, memctr_.GetStorageMemoryUsage()}}};
+    }
+
+    T& container = std::get<T>(it->second.val_);
+    (func)(container);
+
+    memctr_.SubtractBytes(old_bytes);
+    memctr_.AddBytes(new_bytes);
+
+    return container.size();
+  }
+
   std::expected<void, StorageError> SetValue(const std::string& key,
                                              Value&& val);
 

@@ -17,7 +17,7 @@ struct BulkStringReply {
 };
 
 struct UnsignedIntReply {
-  unsigned long long num;
+  std::size_t num;
 };
 
 struct StringReply {

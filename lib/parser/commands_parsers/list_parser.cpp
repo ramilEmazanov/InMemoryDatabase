@@ -125,7 +125,7 @@ std::expected<ParsedCommand, ParsingError> LIndexCommandParse(
     return std::unexpected(BadInteger{arguments[2].lexeme});
   }
 
-  return LIndex{arguments[1].lexeme, static_cast<std::size_t>(idx)};
+  return LIndex{arguments[1].lexeme, idx};
 }
 
 std::expected<ParsedCommand, ParsingError> LSetCommandParse(
@@ -141,8 +141,7 @@ std::expected<ParsedCommand, ParsingError> LSetCommandParse(
     return std::unexpected(BadInteger{arguments[2].lexeme});
   }
 
-  return LSet{arguments[1].lexeme, static_cast<std::size_t>(idx),
-              arguments[3].lexeme};
+  return LSet{arguments[1].lexeme, idx, arguments[3].lexeme};
 }
 
 std::expected<ParsedCommand, ParsingError> LInsertCommandParse(
