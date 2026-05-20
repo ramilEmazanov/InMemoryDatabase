@@ -4,6 +4,7 @@
 #include <deque>
 #include <optional>
 #include <set>
+#include <map>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -20,7 +21,7 @@ using StringValue = std::string;
 using ListValue = std::deque<std::string>;
 using SetValue = std::unordered_set<std::string>;
 
-using GeoValue = std::unordered_map<std::string, GeoPoint>;
+using GeoValue = std::map<std::string, GeoPoint>;
 
 using Value = std::variant<StringValue, ListValue, SetValue, GeoValue>;
 

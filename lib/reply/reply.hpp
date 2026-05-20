@@ -1,6 +1,8 @@
 #pragma once
 
+#include <optional>
 #include <string>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -32,6 +34,10 @@ struct ErrorReply {
   std::string message;
 };
 
-using Reply =
-    std::variant<VoidReply, BulkStringReply, NilReply, UnsignedIntReply,
-                 IntegerReply, StringReply, ArrayReply, ErrorReply>;
+struct GeoPosReply {
+  std::vector<std::optional<std::pair<double, double>>> entries;
+};
+
+using Reply = std::variant<VoidReply, BulkStringReply, NilReply,
+                           UnsignedIntReply, IntegerReply, StringReply,
+                           ArrayReply, ErrorReply, GeoPosReply>;

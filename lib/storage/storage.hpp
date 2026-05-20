@@ -124,6 +124,10 @@ class Storage {
     return container.size();
   }
 
+  std::expected<std::size_t, StorageError> GeoAddPoints(
+      const std::string& key,
+      const std::vector<std::pair<std::string, GeoPoint>>& points);
+
   std::expected<void, StorageError> SetValue(const std::string& key,
                                              Value&& val);
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -32,8 +33,8 @@ struct GeoSearch {
   double latitude;
   double radius;
   std::string unit;
-  bool asc;
-  std::size_t count;
+  std::optional<bool> sort_asc;
+  std::optional<std::size_t> limit;
 };
 
 struct GeoSearchStore {
@@ -43,6 +44,6 @@ struct GeoSearchStore {
   double latitude;
   double radius;
   std::string unit;
-  bool asc;
-  std::size_t count;
+  std::optional<bool> sort_asc;
+  std::optional<std::size_t> limit;
 };

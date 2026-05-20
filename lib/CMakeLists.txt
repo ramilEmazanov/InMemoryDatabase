@@ -11,3 +11,5 @@ add_subdirectory(parser)
 add_subdirectory(reply)
 add_subdirectory(executor)
 add_subdirectory(runner)
+add_subdirectory(geospatial_methods)
+

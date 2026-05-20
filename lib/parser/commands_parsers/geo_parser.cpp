@@ -33,8 +33,8 @@ bool IsValidUnit(const std::string& unit) {
 }
 
 struct GeoSearchOptions {
-  bool asc = true;
-  std::size_t count = 0;
+  std::optional<bool> sort_asc;
+  std::optional<std::size_t> count;
 };
 
 std::expected<GeoSearchOptions, ParsingError> ParseGeoSearchOptions(
@@ -46,10 +46,10 @@ std::expected<GeoSearchOptions, ParsingError> ParseGeoSearchOptions(
     std::string kw = ToUpper(tokens[i].lexeme);
 
     if (kw == "ASC") {
-      opts.asc = true;
+      opts.sort_asc = true;
       ++i;
     } else if (kw == "DESC") {
-      opts.asc = false;
+      opts.sort_asc = false;
       ++i;
     } else if (kw == "COUNT") {
       if (i + 1 >= tokens.size()) {
@@ -89,7 +89,6 @@ std::expected<ParsedCommand, ParsingError> GeoAddCommandParse(
     if (!lat.has_value()) {
       return std::unexpected(lat.error());
     }
-
     cmd.points.push_back({lon.value(), lat.value(), arguments[i + 2].lexeme});
   }
 
@@ -104,7 +103,7 @@ std::expected<ParsedCommand, ParsingError> GeoPosCommandParse(
 
   GeoPos cmd;
   cmd.key = arguments[1].lexeme;
-  cmd.members.reserve(arguments.size() - 2);
+  cmd.members.reserve(arguments.size() - 3);
 
   for (std::size_t i = 2; i + 1 < arguments.size(); ++i) {
     cmd.members.push_back(arguments[i].lexeme);
@@ -123,7 +122,6 @@ std::expected<ParsedCommand, ParsingError> GeoDistCommandParse(
 
   if (arguments.size() == 6) {
     unit = arguments[4].lexeme;
-
     if (!IsValidUnit(unit)) {
       return std::unexpected(BadKeyword{unit, "m|km|mi|ft"});
     }
@@ -148,7 +146,6 @@ std::expected<ParsedCommand, ParsingError> GeoSearchCommandParse(
     return std::unexpected(lon.error());
   }
   auto lat = ParseDouble(arguments[4].lexeme);
-
   if (!lat.has_value()) {
     return std::unexpected(lat.error());
   }
@@ -158,7 +155,6 @@ std::expected<ParsedCommand, ParsingError> GeoSearchCommandParse(
   }
 
   auto radius = ParseDouble(arguments[6].lexeme);
-
   if (!radius.has_value()) {
     return std::unexpected(radius.error());
   }
@@ -170,13 +166,12 @@ std::expected<ParsedCommand, ParsingError> GeoSearchCommandParse(
 
   auto opts_result =
       ParseGeoSearchOptions(arguments.subspan(8, arguments.size() - 9));
-
   if (!opts_result.has_value()) {
     return std::unexpected(opts_result.error());
   }
 
   return GeoSearch{arguments[1].lexeme, lon.value(), lat.value(),
-                   radius.value(),      unit,        opts_result->asc,
+                   radius.value(),      unit,        opts_result->sort_asc,
                    opts_result->count};
 }
 
@@ -219,7 +214,7 @@ std::expected<ParsedCommand, ParsingError> GeoSearchStoreCommandParse(
       ParseGeoSearchOptions(arguments.subspan(9, arguments.size() - 10));
   if (!opts_result) return std::unexpected(opts_result.error());
 
-  return GeoSearchStore{arguments[1].lexeme, arguments[2].lexeme, lon.value(),
-                        lat.value(),         radius.value(),      unit,
-                        opts_result->asc,    opts_result->count};
+  return GeoSearchStore{arguments[1].lexeme,   arguments[2].lexeme, lon.value(),
+                        lat.value(),           radius.value(),      unit,
+                        opts_result->sort_asc, opts_result->count};
 }

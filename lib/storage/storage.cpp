@@ -68,6 +68,63 @@ bool Storage::Exists(const std::string& key) const {
   }
 }
 
+std::expected<std::size_t, StorageError> Storage::GeoAddPoints(
+    const std::string& key,
+    const std::vector<std::pair<std::string, GeoPoint>>& points) {
+  ProcessExpired();
+
+  auto it = storage_.find(key);
+
+  if (it != storage_.end()) {
+    if (!std::holds_alternative<GeoValue>(it->second.val_)) {
+      return std::unexpected{StorageError{WrongTypeRequested{}}};
+    }
+
+    GeoValue& geo = std::get<GeoValue>(it->second.val_);
+
+    std::size_t new_count = 0;
+    std::size_t delta = 0;
+    for (const auto& [member, point] : points) {
+      if (!geo.count(member)) {
+        ++new_count;
+        delta += sizeof(std::string) + member.size() + sizeof(GeoPoint);
+      }
+    }
+
+    if (delta > 0 && memctr_.WouldOverflow(delta)) {
+      return std::unexpected{StorageError{
+          OutOfMemoryError{delta, memctr_.GetStorageMemoryUsage()}}};
+    }
+
+    for (const auto& [member, point] : points) {
+      geo[member] = point;
+    }
+
+    memctr_.AddBytes(delta);
+    return new_count;
+  }
+
+  GeoValue geo;
+  for (const auto& [member, point] : points) {
+    geo[member] = point;
+  }
+
+  std::size_t new_count = geo.size();
+  std::size_t delta = sizeof(GeoValue);
+  for (const auto& [member, point] : geo) {
+    delta += sizeof(std::string) + member.size() + sizeof(GeoPoint);
+  }
+
+  if (memctr_.WouldOverflow(delta)) {
+    return std::unexpected{
+        StorageError{OutOfMemoryError{delta, memctr_.GetStorageMemoryUsage()}}};
+  }
+
+  storage_[key] = Entry{std::move(geo), std::nullopt, 0};
+  memctr_.AddBytes(delta);
+  return new_count;
+}
+
 std::string Storage::GetTypeName(const std::string& key) const {
   return std::string{};
 }

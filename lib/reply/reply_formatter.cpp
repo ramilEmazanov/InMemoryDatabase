@@ -34,6 +34,20 @@ void ReplyFormatter::Format(const Reply& reply, std::ostream& out) {
     },
     [&](const BulkStringReply& e) {
       out << e.message << '\n';
+    },
+    [&](const GeoPosReply& r) {
+      for (std::size_t i = 0; i < r.entries.size(); ++i) {
+        out << (i + 1) << ") ";
+        if (r.entries[i].has_value()) {
+          out << "1) \"" << r.entries[i]->first << "\"\n";
+          out << "   2) \"" << r.entries[i]->second << "\"\n";
+        } else {
+          out << "(nil)\n";
+        }
+      }
+      if (r.entries.empty()) {
+        out << "(empty array)\n";
+      }
     }
   );
 

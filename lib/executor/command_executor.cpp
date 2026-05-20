@@ -5,6 +5,7 @@
 
 #include "errors.hpp"
 #include "geo_commands.hpp"
+#include "geo_methods.hpp"
 #include "list_commands.hpp"
 #include "overload.hpp"
 #include "reply.hpp"
@@ -342,9 +343,76 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
         // 0 else
         return Reply{};
       },
-      [&](const GeoAdd&) { return Reply{}; },
-      [&](const GeoPos&) { return Reply{}; },
-      [&](const GeoDist&) { return Reply{}; },
+      [&](const GeoAdd& cmd) {
+        std::vector<std::pair<std::string, GeoPoint>> points;
+
+        points.reserve(cmd.points.size());
+
+        for (const auto& p : cmd.points) {
+          points.emplace_back(p.member, GeoPoint{p.latitude, p.longitude});
+        }
+        auto result = storage_.GeoAddPoints(cmd.key, points);
+
+        if (!result.has_value()) {
+          return Reply{ErrorReply{FormatStorageError(result.error())}};
+        }
+
+        return Reply{UnsignedIntReply{result.value()}};
+      },
+      [&](const GeoPos& cmd) {
+        auto result = storage_.GetValueAs<GeoValue>(cmd.key);
+
+        GeoPosReply reply;
+        reply.entries.reserve(cmd.members.size());
+
+        if (!result.has_value()) {
+          if (std::holds_alternative<NoSuchKey>(result.error())) {
+            for (std::size_t i = 0; i < cmd.members.size(); ++i) {
+              reply.entries.push_back(std::nullopt);
+            }
+            return Reply{std::move(reply)};
+          }
+          return Reply{ErrorReply{FormatStorageError(result.error())}};
+        }
+
+        const GeoValue& geo = *result.value();
+
+        for (const auto& member : cmd.members) {
+          auto it = geo.find(member);
+          if (it != geo.end()) {
+            reply.entries.push_back(
+                std::make_pair(it->second.lon, it->second.lat));
+          } else {
+            reply.entries.push_back(std::nullopt);
+          }
+        }
+
+        return Reply{GeoPosReply{std::move(reply)}};
+      },
+      [&](const GeoDist& cmd) {
+        auto result = storage_.GetValueAs<GeoValue>(cmd.key);
+
+        if (!result.has_value()) {
+          if (std::holds_alternative<NoSuchKey>(result.error())) {
+            return Reply{NilReply{}};
+          }
+          return Reply{ErrorReply{FormatStorageError(result.error())}};
+        }
+
+        const GeoValue& geo = *result.value();
+        auto it1 = geo.find(cmd.member1);
+        auto it2 = geo.find(cmd.member2);
+
+        if (it1 == geo.end() || it2 == geo.end()) {
+          return Reply{NilReply{}};
+        }
+
+        double dist_km = GeoSpatial::HaversineDistanceKm(it1->second.lon, it1->second.lat,
+                                             it2->second.lon, it2->second.lat);
+        double dist = GeoSpatial::ConvertFromKm(dist_km, cmd.unit);
+
+        return Reply{BulkStringReply{std::to_string(dist)}};
+      },
       [&](const GeoSearch&) { return Reply{}; },
       [&](const GeoSearchStore&) { return Reply{}; },
       [&](const ExpireCommand& cmd) {
