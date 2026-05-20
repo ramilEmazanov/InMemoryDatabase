@@ -303,7 +303,8 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
 
         return Reply{IntegerReply{static_cast<long long>(mutate.value())}};
       },
-      [&](const SAdd&) {
+      [&](const SAdd& cmd) {
+        
         // SetValue
         // Number of elements that were added
         return Reply{};
@@ -407,14 +408,110 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
           return Reply{NilReply{}};
         }
 
-        double dist_km = GeoSpatial::HaversineDistanceKm(it1->second.lon, it1->second.lat,
-                                             it2->second.lon, it2->second.lat);
+        double dist_km = GeoSpatial::HaversineDistanceKm(
+            it1->second.lon, it1->second.lat, it2->second.lon, it2->second.lat);
         double dist = GeoSpatial::ConvertFromKm(dist_km, cmd.unit);
 
         return Reply{BulkStringReply{std::to_string(dist)}};
       },
-      [&](const GeoSearch&) { return Reply{}; },
-      [&](const GeoSearchStore&) { return Reply{}; },
+      [&](const GeoSearch& cmd) {
+        auto result = storage_.GetValueAs<GeoValue>(cmd.key);
+
+        if (!result.has_value()) {
+          if (std::holds_alternative<NoSuchKey>(result.error())) {
+            return Reply{ArrayReply{}};
+          }
+          return Reply{ErrorReply{FormatStorageError(result.error())}};
+        }
+
+        const GeoValue& geo = *result.value();
+        double radius_km = GeoSpatial::ConvertToKm(cmd.radius, cmd.unit);
+
+        std::vector<std::pair<double, std::string>> candidates;
+        for (const auto& [member, point] : geo) {
+          double dist_km = GeoSpatial::HaversineDistanceKm(
+              cmd.longitude, cmd.latitude, point.lon, point.lat);
+          if (dist_km <= radius_km) {
+            candidates.emplace_back(dist_km, member);
+          }
+        }
+
+        if (cmd.sort_asc.has_value()) {
+          if (*cmd.sort_asc) {
+            std::sort(candidates.begin(), candidates.end());
+          } else {
+            std::sort(candidates.begin(), candidates.end(),
+                      std::greater<std::pair<double, std::string>>{});
+          }
+        }
+
+        if (cmd.limit.has_value() && candidates.size() > *cmd.limit) {
+          candidates.resize(*cmd.limit);
+        }
+
+        std::vector<std::string> members;
+        members.reserve(candidates.size());
+        for (const auto& [dist, member] : candidates) {
+          members.push_back(member);
+        }
+
+        return Reply{ArrayReply{std::move(members)}};
+      },
+      [&](const GeoSearchStore& cmd) {
+        auto result = storage_.GetValueAs<GeoValue>(cmd.source);
+
+        if (!result.has_value()) {
+          if (std::holds_alternative<NoSuchKey>(result.error())) {
+            storage_.EraseValue(cmd.dest);
+            return Reply{UnsignedIntReply{0}};
+          }
+          return Reply{ErrorReply{FormatStorageError(result.error())}};
+        }
+
+        const GeoValue& geo = *result.value();
+        double radius_km = GeoSpatial::ConvertToKm(cmd.radius, cmd.unit);
+
+        std::vector<std::pair<double, std::string>> candidates;
+
+        for (const auto& [member, point] : geo) {
+          double dist_km = GeoSpatial::HaversineDistanceKm(cmd.longitude, cmd.latitude,
+                                               point.lon, point.lat);
+          if (dist_km <= radius_km) {
+            candidates.emplace_back(dist_km, member);
+          }
+        }
+
+        if (cmd.sort_asc.has_value()) {
+          if (*cmd.sort_asc) {
+            std::sort(candidates.begin(), candidates.end());
+          } else {
+            std::sort(candidates.begin(), candidates.end(),
+                      std::greater<std::pair<double, std::string>>{});
+          }
+        }
+
+        if (cmd.limit.has_value() && candidates.size() > *cmd.limit) {
+          candidates.resize(*cmd.limit);
+        }
+
+        if (candidates.empty()) {
+          storage_.EraseValue(cmd.dest);
+          return Reply{UnsignedIntReply{0}};
+        }
+
+        GeoValue new_geo;
+        for (const auto& [dist, member] : candidates) {
+          new_geo[member] = geo.at(member);
+        }
+        std::size_t count = new_geo.size();
+
+        auto store_result = storage_.SetValue(cmd.dest, std::move(new_geo));
+        if (!store_result.has_value()) {
+          return Reply{ErrorReply{FormatStorageError(store_result.error())}};
+        }
+
+        return Reply{UnsignedIntReply{count}};
+      },
       [&](const ExpireCommand& cmd) {
         if (!storage_.Exists(cmd.key)) {
           return Reply{IntegerReply{0}};
