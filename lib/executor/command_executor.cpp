@@ -304,45 +304,340 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
         return Reply{IntegerReply{static_cast<long long>(mutate.value())}};
       },
       [&](const SAdd& cmd) {
-        
-        // SetValue
-        // Number of elements that were added
-        return Reply{};
+        auto result = storage_.GetValueAs<SetValue>(cmd.key);
+
+        if (!result.has_value()) {
+          if (std::holds_alternative<NoSuchKey>(result.error())) {
+            SetValue set;
+            for (const auto& val : cmd.members) {
+              set.insert(val);
+            }
+            storage_.SetValue(cmd.key, std::move(set));
+
+            return Reply{UnsignedIntReply{cmd.members.size()}};
+          } else {
+            return Reply{ErrorReply{FormatStorageError(result.error())}};
+          }
+        }
+
+        SetValue* set = result.value();
+        std::vector<std::string> absence;
+        absence.reserve(cmd.members.size());
+
+        for (const auto& val : cmd.members) {
+          if (!set->contains(val)) {
+            absence.push_back(val);
+          }
+        }
+
+        auto added = storage_.MutateValueAdd<SetValue>(
+            cmd.key, absence, [&](SetValue& set) {
+              for (const auto& val : absence) {
+                set.emplace(val);
+              }
+            });
+        if (!added.has_value()) {
+          return Reply{ErrorReply{FormatStorageError(added.error())}};
+        }
+        return Reply{UnsignedIntReply{absence.size()}};
       },
-      [&](const SRem&) {
-        // Number of elements that removed not including non existing
-        return Reply{};
+      [&](const SRem& cmd) {
+        auto result = storage_.GetValueAs<SetValue>(cmd.key);
+
+        if (!result.has_value()) {
+          if (std::holds_alternative<NoSuchKey>(result.error())) {
+            return Reply{UnsignedIntReply{0}};
+          } else {
+            return Reply{ErrorReply{FormatStorageError(result.error())}};
+          }
+        }
+
+        SetValue* set = result.value();
+        std::vector<std::string> to_remove;
+        to_remove.reserve(cmd.members.size());
+
+        for (const auto& val : cmd.members) {
+          if (set->contains(val)) {
+            to_remove.push_back(val);
+          }
+        }
+
+        auto remove = storage_.MutateValueSubtr<SetValue>(
+            cmd.key, to_remove, [&](SetValue& set) {
+              for (const auto& val : to_remove) {
+                set.erase(val);
+              }
+            });
+
+        return Reply{UnsignedIntReply(to_remove.size())};
       },
-      [&](const SIsMember&) {
-        // 0 if not
-        // 1 if yes
-        return Reply{};
+      [&](const SIsMember& cmd) {
+        auto result = storage_.GetValueAs<SetValue>(cmd.key);
+
+        if (!result.has_value()) {
+          if (std::holds_alternative<NoSuchKey>(result.error())) {
+            return Reply{UnsignedIntReply{0}};
+          } else {
+            return Reply{ErrorReply{FormatStorageError(result.error())}};
+          }
+        }
+
+        SetValue* set = result.value();
+
+        if (set->contains(cmd.member)) {
+          return Reply{UnsignedIntReply{1}};
+        } else {
+          return Reply{UnsignedIntReply{0}};
+        }
       },
-      [&](const SMembers&) {
-        // Elements, otherwise empty array
-        return Reply{};
+      [&](const SMembers& cmd) {
+        auto result = storage_.GetValueAs<SetValue>(cmd.key);
+
+        if (!result.has_value()) {
+          if (std::holds_alternative<NoSuchKey>(result.error())) {
+            return Reply{ArrayReply{}};
+          } else {
+            return Reply{ErrorReply{FormatStorageError(result.error())}};
+          }
+        }
+
+        SetValue* set = result.value();
+        std::vector<std::string> res;
+        res.reserve(set->size());
+
+        for (const auto& val : *set) {
+          res.push_back(val);
+        }
+
+        return Reply{ArrayReply{std::move(res)}};
       },
-      [&](const SCard&) {
-        // if does not exist
-        // else cardinality
-        return Reply{};
+      [&](const SCard& cmd) {
+        auto result = storage_.GetValueAs<SetValue>(cmd.key);
+
+        if (!result.has_value()) {
+          if (std::holds_alternative<NoSuchKey>(result.error())) {
+            return Reply{UnsignedIntReply{0}};
+          } else {
+            return Reply{ErrorReply{FormatStorageError(result.error())}};
+          }
+        }
+
+        SetValue* set = result.value();
+        return Reply{UnsignedIntReply{set->size()}};
       },
-      [&](const SUnion&) {
-        // Just a union
-        return Reply{};
+      [&](const SUnion& cmd) {
+        if (cmd.keys.size() == 0) {
+          return Reply{ArrayReply{}};
+        }
+        if (cmd.keys.size() == 1) {
+          auto result = storage_.GetValueAs<SetValue>(cmd.keys[0]);
+
+          if (!result.has_value()) {
+            if (std::holds_alternative<NoSuchKey>(result.error())) {
+              return Reply{ArrayReply{}};
+            } else {
+              return Reply{ErrorReply{FormatStorageError(result.error())}};
+            }
+          }
+
+          std::vector<std::string> res;
+          SetValue* set = result.value();
+          res.reserve(set->size());
+
+          for (const auto& val : *set) {
+            res.push_back(val);
+          }
+          return Reply{ArrayReply{std::move(res)}};
+        }
+
+        std::set<std::string> res;
+
+        for (const auto& val : cmd.keys) {
+          auto result = storage_.GetValueAs<SetValue>(val);
+
+          if (result.has_value()) {
+            auto* set = result.value();
+
+            for (const auto& item : *set) {
+              res.insert(item);
+            }
+          }
+        }
+
+        std::vector<std::string> ans;
+
+        ans.reserve(res.size());
+        for (const auto& val : res) {
+          ans.push_back(val);
+        }
+
+        return Reply{ArrayReply{std::move(ans)}};
       },
-      [&](const SInter&) {
-        // Just an intersection
-        return Reply{};
+      [&](const SInter& cmd) {
+        std::unordered_map<std::string, std::size_t> counter;
+
+        if (cmd.keys.size() == 0) {
+          return Reply{ArrayReply{}};
+        }
+        if (cmd.keys.size() == 1) {
+          auto result = storage_.GetValueAs<SetValue>(cmd.keys[0]);
+
+          if (!result.has_value()) {
+            if (std::holds_alternative<NoSuchKey>(result.error())) {
+              return Reply{ArrayReply{}};
+            } else {
+              return Reply{ErrorReply{FormatStorageError(result.error())}};
+            }
+          }
+
+          std::vector<std::string> res;
+          SetValue* set = result.value();
+          res.reserve(set->size());
+
+          for (const auto& val : *set) {
+            res.push_back(val);
+          }
+          return Reply{ArrayReply{std::move(res)}};
+        }
+
+        for (const auto& key : cmd.keys) {
+          auto resp = storage_.GetValueAs<SetValue>(key);
+          if (!resp.has_value()) {
+            if (std::holds_alternative<NoSuchKey>(resp.error())) {
+              return Reply{ArrayReply{}};
+            }
+          }
+        }
+
+        for (const auto& key : cmd.keys) {
+          auto result = storage_.GetValueAs<SetValue>(key);
+
+          SetValue* set = result.value();
+
+          for (const auto& item : *set) {
+            counter[item]++;
+          }
+        }
+
+        std::size_t set_count = cmd.keys.size();
+        std::vector<std::string> res;
+
+        for (auto it = counter.begin(); it != counter.end(); ++it) {
+          if (it->second == set_count) {
+            res.push_back(it->first);
+          }
+        }
+
+        return Reply{ArrayReply{std::move(res)}};
       },
-      [&](const SDiff&) {
-        // Just a diff
-        return Reply{};
+      [&](const SDiff& cmd) {
+        if (cmd.keys.size() == 0) {
+          return Reply{ArrayReply{}};
+        }
+        if (cmd.keys.size() == 1) {
+          auto result = storage_.GetValueAs<SetValue>(cmd.keys[0]);
+
+          if (!result.has_value()) {
+            if (std::holds_alternative<NoSuchKey>(result.error())) {
+              return Reply{ArrayReply{}};
+            } else {
+              return Reply{ErrorReply{FormatStorageError(result.error())}};
+            }
+          }
+
+          std::vector<std::string> res;
+          SetValue* set = result.value();
+          res.reserve(set->size());
+
+          for (const auto& val : *set) {
+            res.push_back(val);
+          }
+          return Reply{ArrayReply{std::move(res)}};
+        }
+
+        auto main_set = storage_.GetValueAs<SetValue>(cmd.keys[0]);
+        std::unordered_set<std::string> temp = *(main_set.value());
+
+        for (const auto& key : cmd.keys) {
+          auto result = storage_.GetValueAs<SetValue>(key);
+
+          if (!result.has_value()) {
+            continue;
+          }
+
+          SetValue* temp_set = result.value();
+          for (const auto& item : *temp_set) {
+            if (temp.contains(item)) {
+              temp.erase(item);
+            }
+          }
+        }
+
+        std::vector<std::string> res;
+        res.reserve(temp.size());
+
+        for (const auto& item : temp) {
+          res.push_back(item);
+        }
+
+        return Reply{ArrayReply{std::move(res)}};
       },
-      [&](const SMove&) {
-        // 1 if moved
-        // 0 else
-        return Reply{};
+      [&](const SMove& cmd) {
+        auto source_resp = storage_.GetValueAs<SetValue>(cmd.source);
+
+        if (!source_resp.has_value()) {
+          if (std::holds_alternative<NoSuchKey>(source_resp.error())) {
+            return Reply{UnsignedIntReply{0}};
+          } else {
+            return Reply{ErrorReply{FormatStorageError(source_resp.error())}};
+          }
+        }
+
+        SetValue* source = source_resp.value();
+        if (!source->contains(cmd.member)) {
+          return Reply{UnsignedIntReply{0}};
+        }
+
+        auto dest_resp = storage_.GetValueAs<SetValue>(cmd.destination);
+        if (!dest_resp.has_value()) {
+          if (std::holds_alternative<NoSuchKey>(source_resp.error())) {
+            std::unordered_set<std::string> new_;
+            new_.insert(cmd.member);
+            storage_.SetValue(cmd.destination, std::move(new_));
+            return Reply{UnsignedIntReply{1}};
+          } else {
+            return Reply{ErrorReply{FormatStorageError(source_resp.error())}};
+          }
+        }
+
+        SetValue* dest = dest_resp.value();
+
+        if (source == dest) {
+          if (source->contains(cmd.member)) {
+            return Reply{UnsignedIntReply{1}};
+          } else {
+            return Reply{UnsignedIntReply{0}};
+          }
+        }
+
+        if (dest->contains(cmd.member)) {
+          storage_.MutateValueSubtr<SetValue>(
+              cmd.source, {cmd.member},
+              [&](SetValue& set) { set.erase(cmd.member); });
+        }
+
+        storage_.MutateValueAdd<SetValue>(
+            cmd.destination, {cmd.member},
+            [&](SetValue& set) { set.insert(cmd.member); });
+
+        storage_.MutateValueSubtr<SetValue>(
+            cmd.source, {cmd.member},
+            [&](SetValue& set) { set.erase(cmd.member); });
+
+        if (source->empty()) {
+          storage_.EraseValue(cmd.source);
+        }
+        return Reply{UnsignedIntReply{1}};
       },
       [&](const GeoAdd& cmd) {
         std::vector<std::pair<std::string, GeoPoint>> points;
@@ -474,8 +769,8 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
         std::vector<std::pair<double, std::string>> candidates;
 
         for (const auto& [member, point] : geo) {
-          double dist_km = GeoSpatial::HaversineDistanceKm(cmd.longitude, cmd.latitude,
-                                               point.lon, point.lat);
+          double dist_km = GeoSpatial::HaversineDistanceKm(
+              cmd.longitude, cmd.latitude, point.lon, point.lat);
           if (dist_km <= radius_km) {
             candidates.emplace_back(dist_km, member);
           }

@@ -1,10 +1,12 @@
 add_executable(labwork10_tests
-  abc.cpp
+  string_tests.cpp
+  list_tests.cpp
 )
 
 target_link_libraries(labwork10_tests PRIVATE
   GTest::gtest_main
   GTest::gmock
+  runner
 )
 
 target_include_directories(labwork10_tests PRIVATE
