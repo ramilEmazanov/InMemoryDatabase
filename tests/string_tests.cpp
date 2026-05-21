@@ -101,13 +101,14 @@ TEST_F(StringTest, ExpireExistingKey) {
 TEST_F(StringTest, KeyDisappearsAfterExpiration) {
   Run("SET key val");
   Run("EXPIRE key 1");
-  std::this_thread::sleep_for(std::chrono::milliseconds(1100));
+  std::this_thread::sleep_for(std::chrono::milliseconds(1500));
   EXPECT_EQ(Run("GET key"), "(nil)\n");
 }
 
 TEST_F(StringTest, SetClearsExistingTtl) {
   Run("SET key val");
-  Run("EXPIRE key 100");
+  Run("EXPIRE key 1");
+  std::this_thread::sleep_for(std::chrono::milliseconds(1500));
   Run("SET key newval");
   EXPECT_EQ(Run("TTL key"), "(integer) -1\n");
 }

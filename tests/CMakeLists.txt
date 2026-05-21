@@ -3,6 +3,8 @@ add_executable(labwork10_tests
   list_tests.cpp
   set_tests.cpp
   general_tests.cpp
+  geo_tests.cpp
+  memory_tests.cpp
 )
 
 target_link_libraries(labwork10_tests PRIVATE

@@ -1,6 +1,7 @@
 #include "storage.hpp"
 
 #include <deque>
+#include <regex>
 #include <string>
 #include <unordered_map>
 #include <variant>
@@ -140,7 +141,26 @@ std::string Storage::GetTypeName(const std::string& key) const {
 std::size_t Storage::GetTotalKeyCount() const { return storage_.size(); }
 
 std::vector<std::string> Storage::FindKeysMatching(std::string pattern) const {
-  return std::vector<std::string>{};
+  std::string re_str;
+  for (char c : pattern) {
+    if (c == '*') {
+      re_str += ".*";
+    } else if (c == '?') {
+      re_str += '.';
+    } else {
+      re_str += c;
+    }
+  }
+  try {
+    std::regex re(re_str);
+    std::vector<std::string> result;
+    for (const auto& [key, _] : storage_) {
+      if (std::regex_match(key, re)) result.push_back(key);
+    }
+    return result;
+  } catch (const std::regex_error&) {
+    return {};
+  }
 }
 
 void Storage::Flush() {

@@ -24,7 +24,7 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
                 [&](StringValue& val) { val.append(cmd.value); });
 
             if (!adding.has_value()) {
-              return Reply{ErrorReply{FormatStorageError(reply.error())}};
+              return Reply{ErrorReply{FormatStorageError(adding.error())}};
             } else {
               return Reply{VoidReply{}};
             }
