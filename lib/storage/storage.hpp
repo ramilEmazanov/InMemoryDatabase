@@ -133,7 +133,7 @@ class Storage {
 
   bool EraseValue(const std::string& key);
 
-  bool Exists(const std::string& key) const;
+  bool Exists(const std::string& key);
 
   std::string GetTypeName(const std::string& key) const;
 

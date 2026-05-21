@@ -18,7 +18,13 @@ std::size_t CountValueMemoryUsage(const Value& val) {
 
         return sum;
       },
-      [&](const GeoValue& str) -> std::size_t {},
+      [&](const GeoValue& str) -> std::size_t {
+        std::size_t sum = sizeof(GeoValue);
+        for (const auto& [member, point] : str) {
+          sum += sizeof(std::string) + member.size() + sizeof(GeoPoint);
+        }
+        return sum;
+      },
       [&](const SetValue& str) -> std::size_t {
         std::size_t sum = sizeof(SetValue);
 

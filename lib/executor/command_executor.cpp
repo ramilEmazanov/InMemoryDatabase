@@ -620,19 +620,24 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
           }
         }
 
+        bool deleted = false;
+
         if (dest->contains(cmd.member)) {
           storage_.MutateValueSubtr<SetValue>(
               cmd.source, {cmd.member},
               [&](SetValue& set) { set.erase(cmd.member); });
+          deleted = true;
         }
 
         storage_.MutateValueAdd<SetValue>(
             cmd.destination, {cmd.member},
             [&](SetValue& set) { set.insert(cmd.member); });
 
-        storage_.MutateValueSubtr<SetValue>(
-            cmd.source, {cmd.member},
-            [&](SetValue& set) { set.erase(cmd.member); });
+        if (!deleted) {
+          storage_.MutateValueSubtr<SetValue>(
+              cmd.source, {cmd.member},
+              [&](SetValue& set) { set.erase(cmd.member); });
+        }
 
         if (source->empty()) {
           storage_.EraseValue(cmd.source);
@@ -821,40 +826,38 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
         return Reply{BulkStringReply{storage_.GetTypeName(cmd.key)}};
       },
       [&](const DelCommand& cmd) {
+        std::size_t count = 0;
         for (const auto& key : cmd.keys) {
-          storage_.EraseValue(key);
+          count += storage_.EraseValue(key) ? 1 : 0;
         }
-        return Reply{};
+        return Reply{UnsignedIntReply{cmd.keys.size()}};
       },
       [&](const ExistsCommand& cmd) {
+        std::size_t count = 0;
         for (const auto& key : cmd.keys) {
-          storage_.Exists(key);
+          count += storage_.Exists(key) ? 1 : 0;
         }
-        return Reply{};
+        return Reply{UnsignedIntReply{count}};
       },
       [&](const KeysCommand& cmd) {
-        storage_.FindKeysMatching(cmd.pattern);
-        return Reply{};
+        return Reply{ArrayReply{storage_.FindKeysMatching(cmd.pattern)}};
       },
       [&](const FlushDbCommand&) {
         storage_.Flush();
-        return Reply{};
+        return Reply{VoidReply{}};
       },
       [&](const ConfigSetCommand& cmd) {
         storage_.SetLimitMemory(cmd.value);
         return Reply{VoidReply{}};
       },
       [&](const ConfigGetCommand&) {
-        storage_.GetMaxMemory();
-        return Reply{};
+        return Reply{UnsignedIntReply{storage_.GetMaxMemory()}};
       },
       [&](const DbSizeCommand&) {
-        storage_.GetTotalKeyCount();
-        return Reply{};
+        return Reply{UnsignedIntReply{storage_.GetTotalKeyCount()}};
       },
       [&](const MemoryUsageCommand& cmd) {
-        storage_.CountKeyMemoryUsage(cmd.key);
-        return Reply{};
+        return Reply{UnsignedIntReply{storage_.CountKeyMemoryUsage(cmd.key)}};
       }};
 
   return std::visit(overload, command);

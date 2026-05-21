@@ -52,7 +52,7 @@ TEST_F(StringTest, SetCreatesValue) {
 TEST_F(StringTest, SetOverwritesValue) {
   Run("SET foo bara");
   Run("SET foo bere");
-  EXPECT_EQ(Run("GET foo"), "\"baz\"\n");
+  EXPECT_EQ(Run("GET foo"), "\"bere\"\n");
 }
 
 TEST_F(StringTest, GetMissingReturnsNil) {

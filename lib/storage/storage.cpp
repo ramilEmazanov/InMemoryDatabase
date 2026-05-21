@@ -61,12 +61,9 @@ bool Storage::EraseValue(const std::string& key) {
   }
 }
 
-bool Storage::Exists(const std::string& key) const {
-  if (storage_.find(key) != storage_.end()) {
-    return true;
-  } else {
-    return false;
-  }
+bool Storage::Exists(const std::string& key) {
+  ProcessExpired();
+  return storage_.find(key) != storage_.end();
 }
 
 std::expected<std::size_t, StorageError> Storage::GeoAddPoints(
@@ -133,7 +130,7 @@ std::string Storage::GetTypeName(const std::string& key) const {
   }
   auto overload =
       Overload{[](const StringValue&) { return std::string{"string"}; },
-               [](const GeoValue&) { return std::string{"geo"}; },
+               [](const GeoValue&) { return std::string{"zset"}; },
                [](const SetValue&) { return std::string{"set"}; },
                [](const ListValue&) { return std::string{"list"}; }};
 
