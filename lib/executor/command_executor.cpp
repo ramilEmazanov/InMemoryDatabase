@@ -14,12 +14,33 @@
 
 Reply CommandExecutor::Execute(const ParsedCommand& command) {
   auto overload = Overload{
-      [&](const SetCommand& set_command) {
-        auto reply =
-            storage_.PutValue(set_command.key, StringValue{set_command.value});
+      [&](const SetCommand& cmd) {
+        auto reply = storage_.GetValueAs<StringValue>(cmd.key);
 
         if (!reply.has_value()) {
+          if (std::holds_alternative<NoSuchKey>(reply.error())) {
+            auto adding = storage_.MutateValueAdd<StringValue>(
+                cmd.key, {cmd.value},
+                [&](StringValue& val) { val.append(cmd.value); });
+
+            if (!adding.has_value()) {
+              return Reply{ErrorReply{FormatStorageError(reply.error())}};
+            } else {
+              return Reply{VoidReply{}};
+            }
+          }
           return Reply{ErrorReply{FormatStorageError(reply.error())}};
+        }
+
+        std::size_t old_bytes = reply.value()->size();
+        std::size_t new_bytes = cmd.value.size();
+
+        auto mutate = storage_.MutateValueInPlace<StringValue>(
+            cmd.key, old_bytes, new_bytes,
+            [&](StringValue& str) { str = cmd.value; });
+
+        if (!mutate.has_value()) {
+          return Reply{ErrorReply{FormatStorageError(mutate.error())}};
         }
 
         return Reply{VoidReply{}};
@@ -48,19 +69,30 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
 
         return Reply{UnsignedIntReply{reply.value()->size()}};
       },
-      [&](const AppendCommand& append_command) {
-        auto reply = storage_.GetValueAs<std::string>(append_command.key);
+      [&](const AppendCommand& cmd) {
+        auto reply = storage_.GetValueAs<std::string>(cmd.key);
 
         if (!reply.has_value() &&
-            !std::holds_alternative<NoSuchKey>(reply.error())) {
+            std::holds_alternative<NoSuchKey>(reply.error())) {
+          auto adding = storage_.MutateValueAdd<StringValue>(
+              cmd.key, {cmd.value},
+              [&](StringValue& val) { val.append(cmd.value); });
+
+          if (!adding.has_value()) {
+            return Reply{ErrorReply{FormatStorageError(reply.error())}};
+          } else {
+            return Reply{UnsignedIntReply{cmd.value.size()}};
+          }
+        } else if (!reply.has_value()) {
           return Reply{ErrorReply{FormatStorageError(reply.error())}};
         }
 
         std::string now = reply.has_value() ? *reply.value() : std::string{};
-        std::string added = now + append_command.value;
+        std::string added = now + cmd.value;
 
-        auto set_reply =
-            storage_.PutValue(append_command.key, StringValue{added});
+        auto set_reply = storage_.MutateValueInPlace<StringValue>(
+            cmd.key, now.size(), added.size(),
+            [&](StringValue& s) { s = added; });
 
         if (!set_reply.has_value()) {
           return Reply{ErrorReply{FormatStorageError(set_reply.error())}};
@@ -830,7 +862,7 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
         for (const auto& key : cmd.keys) {
           count += storage_.EraseValue(key) ? 1 : 0;
         }
-        return Reply{UnsignedIntReply{cmd.keys.size()}};
+        return Reply{UnsignedIntReply{count}};
       },
       [&](const ExistsCommand& cmd) {
         std::size_t count = 0;
