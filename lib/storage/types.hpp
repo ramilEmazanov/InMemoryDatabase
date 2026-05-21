@@ -1,10 +1,7 @@
 #pragma once
 
-#include <chrono>
 #include <deque>
 #include <map>
-#include <optional>
-#include <set>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -23,12 +20,6 @@ using SetValue = std::unordered_set<std::string>;
 using GeoValue = std::map<std::string, GeoPoint>;
 
 using Value = std::variant<StringValue, ListValue, SetValue, GeoValue>;
-
-struct Entry {
-  Value val_;
-  std::optional<std::chrono::steady_clock::time_point> expire_at_;
-  std::size_t size_bytes_;
-};
 
 std::size_t CountValueMemoryUsage(const Value& val);
 

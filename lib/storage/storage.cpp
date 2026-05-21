@@ -29,10 +29,11 @@ std::expected<void, StorageError> Storage::PutValue(const std::string& key,
   ProcessExpired();
 
   if (storage_.find(key) != storage_.end()) {
-    std::size_t size_val_curr = CountValueMemoryUsage(storage_.at(key).val_);
-    std::size_t size_after_ = memctr_.GetStorageMemoryUsage() - size_val_curr;
+    std::size_t size_val_curr = CountValueMemoryUsage(storage_.at(key));
+    std::size_t size_after = memctr_.GetStorageMemoryUsage() - size_val_curr;
 
-    if (memctr_.GetMaxMemoryUsage() < size_after_ + size_bytes) {
+    if (memctr_.GetMaxMemoryUsage() != 0 &&
+        memctr_.GetMaxMemoryUsage() < size_after + size_bytes) {
       return std::unexpected{
           OutOfMemoryError{size_bytes, memctr_.GetStorageMemoryUsage()}};
     } else {
@@ -46,14 +47,14 @@ std::expected<void, StorageError> Storage::PutValue(const std::string& key,
     }
   }
 
-  storage_[key] = Entry{std::move(val), std::nullopt, 0};
+  storage_[key] = std::move(val);
   memctr_.AddBytes(size_bytes);
   return std::expected<void, StorageError>{};
 }
 
 bool Storage::EraseValue(const std::string& key) {
   if (storage_.find(key) != storage_.end()) {
-    memctr_.SubtractBytes(CountValueMemoryUsage(storage_.at(key).val_));
+    memctr_.SubtractBytes(CountValueMemoryUsage(storage_.at(key)));
     timectr_.DeleteExpiration(key);
     storage_.erase(key);
     return true;
@@ -75,11 +76,11 @@ std::expected<std::size_t, StorageError> Storage::GeoAddPoints(
   auto it = storage_.find(key);
 
   if (it != storage_.end()) {
-    if (!std::holds_alternative<GeoValue>(it->second.val_)) {
+    if (!std::holds_alternative<GeoValue>(it->second)) {
       return std::unexpected{StorageError{WrongTypeRequested{}}};
     }
 
-    GeoValue& geo = std::get<GeoValue>(it->second.val_);
+    GeoValue& geo = std::get<GeoValue>(it->second);
 
     std::size_t new_count = 0;
     std::size_t delta = 0;
@@ -119,7 +120,7 @@ std::expected<std::size_t, StorageError> Storage::GeoAddPoints(
         StorageError{OutOfMemoryError{delta, memctr_.GetStorageMemoryUsage()}}};
   }
 
-  storage_[key] = Entry{std::move(geo), std::nullopt, 0};
+  storage_[key] = std::move(geo);
   memctr_.AddBytes(delta);
   return new_count;
 }
@@ -135,12 +136,13 @@ std::string Storage::GetTypeName(const std::string& key) const {
                [](const SetValue&) { return std::string{"set"}; },
                [](const ListValue&) { return std::string{"list"}; }};
 
-  return std::visit(overload, it->second.val_);
+  return std::visit(overload, it->second);
 }
 
 std::size_t Storage::GetTotalKeyCount() const { return storage_.size(); }
 
-std::vector<std::string> Storage::FindKeysMatching(std::string pattern) const {
+std::vector<std::string> Storage::FindKeysMatching(std::string pattern) {
+  ProcessExpired();
   std::string re_str;
   for (char c : pattern) {
     if (c == '*') {
@@ -170,11 +172,15 @@ void Storage::Flush() {
 }
 
 std::size_t Storage::CountKeyMemoryUsage(const std::string& key) const {
-  return CountValueMemoryUsage(storage_.at(key).val_);
+  return CountValueMemoryUsage(storage_.at(key));
 }
 
 void Storage::SetKeyExpiration(const std::string& key, std::size_t seconds) {
   timectr_.SetExpiration(key, seconds);
+}
+
+void Storage::ClearExpiration(const std::string& key) {
+  timectr_.DeleteExpiration(key);
 }
 
 long long Storage::GetKeyTTL(const std::string& key) {

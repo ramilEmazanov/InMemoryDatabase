@@ -1,6 +1,7 @@
 #include "command_executor.hpp"
 
 #include <algorithm>
+#include <set>
 #include <variant>
 
 #include "errors.hpp"
@@ -43,6 +44,7 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
           return Reply{ErrorReply{FormatStorageError(mutate.error())}};
         }
 
+        storage_.ClearExpiration(cmd.key);
         return Reply{VoidReply{}};
       },
       [&](const GetCommand& get_command) {
@@ -193,7 +195,7 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
         }
 
         auto mutate = storage_.MutateValueSubtr<ListValue>(
-            cmd.key, std::vector<std::string>{}, [&](ListValue& list) {
+            cmd.key, response, [&](ListValue& list) {
               std::size_t n = std::min(count, list.size());
               for (std::size_t i = 0; i < n; ++i) {
                 list.pop_back();
@@ -344,9 +346,12 @@ Reply CommandExecutor::Execute(const ParsedCommand& command) {
             for (const auto& val : cmd.members) {
               set.insert(val);
             }
-            storage_.PutValue(cmd.key, std::move(set));
-
-            return Reply{UnsignedIntReply{cmd.members.size()}};
+            std::size_t inserted = set.size();
+            auto put = storage_.PutValue(cmd.key, std::move(set));
+            if (!put.has_value()) {
+              return Reply{ErrorReply{FormatStorageError(put.error())}};
+            }
+            return Reply{UnsignedIntReply{inserted}};
           } else {
             return Reply{ErrorReply{FormatStorageError(result.error())}};
           }

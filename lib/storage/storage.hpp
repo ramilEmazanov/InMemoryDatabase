@@ -20,8 +20,8 @@ class Storage {
   std::expected<T*, StorageError> GetValueAs(const std::string& key) {
     ProcessExpired();
     if (storage_.find(key) != storage_.end()) {
-      if (std::holds_alternative<T>(storage_[key].val_)) {
-        return &std::get<T>(storage_[key].val_);
+      if (std::holds_alternative<T>(storage_[key])) {
+        return &std::get<T>(storage_[key]);
       }
       return std::unexpected{StorageError{WrongTypeRequested{}}};
     }
@@ -42,29 +42,33 @@ class Storage {
     auto it = storage_.find(key);
 
     if (it != storage_.end()) {
-      if (!std::holds_alternative<T>(it->second.val_)) {
+      if (!std::holds_alternative<T>(it->second)) {
         return std::unexpected{StorageError{WrongTypeRequested{}}};
       }
       if (memctr_.WouldOverflow(delta)) {
         return std::unexpected{StorageError{
             OutOfMemoryError{delta, memctr_.GetStorageMemoryUsage()}}};
       }
-      T& container = std::get<T>(it->second.val_);
+      T& container = std::get<T>(it->second);
       (func)(container);
       memctr_.AddBytes(delta);
       return container.size();
     }
 
-    if (memctr_.WouldOverflow(delta)) {
+    std::size_t total_delta = delta;
+    if constexpr (!std::is_same_v<T, StringValue>) {
+      total_delta += sizeof(T);
+    }
+    if (memctr_.WouldOverflow(total_delta)) {
       return std::unexpected{StorageError{
-          OutOfMemoryError{delta, memctr_.GetStorageMemoryUsage()}}};
+          OutOfMemoryError{total_delta, memctr_.GetStorageMemoryUsage()}}};
     }
 
     T container;
     (func)(container);
-    storage_[key] = Entry{std::move(container), std::nullopt, 0};
-    memctr_.AddBytes(delta);
-    return std::get<T>(storage_.at(key).val_).size();
+    storage_[key] = std::move(container);
+    memctr_.AddBytes(total_delta);
+    return std::get<T>(storage_.at(key)).size();
   }
 
   template <ContainerType T, typename Func>
@@ -81,11 +85,11 @@ class Storage {
     auto it = storage_.find(key);
 
     if (it != storage_.end()) {
-      if (!std::holds_alternative<T>(it->second.val_)) {
+      if (!std::holds_alternative<T>(it->second)) {
         return std::unexpected{StorageError{WrongTypeRequested{}}};
       }
 
-      T& container = std::get<T>(it->second.val_);
+      T& container = std::get<T>(it->second);
       (func)(container);
       memctr_.SubtractBytes(delta);
       return container.size();
@@ -106,7 +110,7 @@ class Storage {
       return std::unexpected{StorageError{NoSuchKey{key}}};
     }
 
-    if (!std::holds_alternative<T>(it->second.val_)) {
+    if (!std::holds_alternative<T>(it->second)) {
       return std::unexpected{StorageError{WrongTypeRequested{}}};
     }
 
@@ -115,7 +119,7 @@ class Storage {
           new_bytes - old_bytes, memctr_.GetStorageMemoryUsage()}}};
     }
 
-    T& container = std::get<T>(it->second.val_);
+    T& container = std::get<T>(it->second);
     (func)(container);
 
     memctr_.SubtractBytes(old_bytes);
@@ -139,7 +143,7 @@ class Storage {
 
   std::size_t GetTotalKeyCount() const;
 
-  std::vector<std::string> FindKeysMatching(std::string pattern) const;
+  std::vector<std::string> FindKeysMatching(std::string pattern);
 
   void Flush();
 
@@ -149,6 +153,8 @@ class Storage {
 
   void SetKeyExpiration(const std::string& key, std::size_t seconds);
 
+  void ClearExpiration(const std::string& key);
+
   long long GetKeyTTL(const std::string& key);
 
   std::size_t GetMaxMemory() const;
@@ -156,7 +162,7 @@ class Storage {
   void SetLimitMemory(std::size_t limit);
 
  private:
-  std::unordered_map<std::string, Entry> storage_;
+  std::unordered_map<std::string, Value> storage_;
   MemoryController& memctr_;
   TimeController& timectr_;
 };

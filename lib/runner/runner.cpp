@@ -14,7 +14,8 @@ int Runner::Run() {
   while (std::getline(in_, line)) {
     auto tokens = Tokenizer::Tokenize(line);
 
-    if (tokens.has_value() && tokens->size() == 1) {
+    if (tokens.has_value() && tokens->size() == 1 &&
+        tokens->front().kind == TokenKind::Bareword) {
       std::string cmd = tokens->front().lexeme;
       std::transform(cmd.begin(), cmd.end(), cmd.begin(), ::toupper);
       if (cmd == "EXIT") {

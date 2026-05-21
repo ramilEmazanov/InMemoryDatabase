@@ -1,9 +1,12 @@
 #include "geo_methods.hpp"
 
-constexpr double kEarthRadiusKm = 6372.8;
-constexpr double kPi = 3.1415;
+#include <numbers>
 
-double GeoSpatial::ToRadians(double deg) { return deg * kPi / 180.0; }
+constexpr double kEarthRadiusKm = 6372.8;
+
+double GeoSpatial::ToRadians(double deg) {
+  return deg * std::numbers::pi / 180.0;
+}
 
 double GeoSpatial::HaversineDistanceKm(double lon1, double lat1, double lon2,
                                        double lat2) {
