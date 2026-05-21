@@ -1,12 +1,20 @@
+#include "command_parser.hpp"
+
 #include <algorithm>
-#include <command_parser.hpp>
-#include <parser_commands_table.hpp>
+#include <cctype>
+#include <expected>
+#include <string>
 
 #include "errors.hpp"
+#include "parser_commands_table.hpp"
 
 std::expected<ParsedCommand, ParsingError> CommandParser::Parse(
-    std::span<const Token> token) {
+    const std::vector<Token>& token) {
   static auto func_map = GetCommandTable();
+
+  if (token.empty()) {
+    return std::unexpected{UnknownCommand{""}};
+  }
 
   std::string command_name = token[0].lexeme;
   std::string upper_name = command_name;

@@ -1,9 +1,9 @@
 #pragma once
 
 #include <expected>
-#include <span>
 #include <token.hpp>
 #include <variant>
+#include <vector>
 
 #include "errors.hpp"
 #include "parsed_command.hpp"
@@ -11,5 +11,5 @@
 class CommandParser {
  public:
   static std::expected<ParsedCommand, ParsingError> Parse(
-      std::span<const Token> token);
+      const std::vector<Token>& token);
 };

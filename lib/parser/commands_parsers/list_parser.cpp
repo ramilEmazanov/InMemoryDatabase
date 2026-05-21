@@ -2,21 +2,20 @@
 
 #include <algorithm>
 #include <expected>
-#include <span>
 
 #include "errors.hpp"
 #include "list_commands.hpp"
 
 std::expected<ParsedCommand, ParsingError> LPushCommandParse(
-    std::span<const Token> arguments) {
-  if (arguments.size() < 4) {
-    return std::unexpected(WrongArity{"LPUSH", 3, arguments.size() - 1});
+    const std::vector<Token>& arguments) {
+  if (arguments.size() < 3) {
+    return std::unexpected(WrongArity{"LPUSH", 3, arguments.size()});
   }
 
   std::vector<std::string> values;
-  values.reserve(arguments.size() - 2);
+  values.reserve(arguments.size() - 1);
 
-  for (std::size_t i = 2; i + 1 < arguments.size(); ++i) {
+  for (std::size_t i = 2; i < arguments.size(); ++i) {
     values.push_back(arguments[i].lexeme);
   }
 
@@ -24,15 +23,15 @@ std::expected<ParsedCommand, ParsingError> LPushCommandParse(
 }
 
 std::expected<ParsedCommand, ParsingError> RPushCommandParse(
-    std::span<const Token> arguments) {
-  if (arguments.size() < 4) {
-    return std::unexpected(WrongArity{"RPUSH", 3, arguments.size() - 1});
+    const std::vector<Token>& arguments) {
+  if (arguments.size() < 3) {
+    return std::unexpected(WrongArity{"RPUSH", 3, arguments.size()});
   }
 
   std::vector<std::string> values;
-  values.reserve(arguments.size() - 2);
+  values.reserve(arguments.size() - 1);
 
-  for (std::size_t i = 2; i + 1 < arguments.size(); ++i) {
+  for (std::size_t i = 2; i < arguments.size(); ++i) {
     values.push_back(arguments[i].lexeme);
   }
 
@@ -40,12 +39,12 @@ std::expected<ParsedCommand, ParsingError> RPushCommandParse(
 }
 
 std::expected<ParsedCommand, ParsingError> LPopCommandParse(
-    std::span<const Token> arguments) {
-  if (arguments.size() != 3 && arguments.size() != 4) {
-    return std::unexpected(WrongArity{"LPOP", 2, arguments.size() - 1});
+    const std::vector<Token>& arguments) {
+  if (arguments.size() != 2 && arguments.size() != 3) {
+    return std::unexpected(WrongArity{"LPOP", 2, arguments.size()});
   }
 
-  if (arguments.size() == 3) {
+  if (arguments.size() == 2) {
     return LPop{arguments[1].lexeme, std::nullopt};
   }
 
@@ -60,12 +59,12 @@ std::expected<ParsedCommand, ParsingError> LPopCommandParse(
 }
 
 std::expected<ParsedCommand, ParsingError> RPopCommandParse(
-    std::span<const Token> arguments) {
-  if (arguments.size() != 3 && arguments.size() != 4) {
-    return std::unexpected(WrongArity{"RPOP", 2, arguments.size() - 1});
+    const std::vector<Token>& arguments) {
+  if (arguments.size() != 2 && arguments.size() != 3) {
+    return std::unexpected(WrongArity{"RPOP", 2, arguments.size()});
   }
 
-  if (arguments.size() == 3) {
+  if (arguments.size() == 2) {
     return RPop{arguments[1].lexeme, std::nullopt};
   }
 
@@ -80,18 +79,18 @@ std::expected<ParsedCommand, ParsingError> RPopCommandParse(
 }
 
 std::expected<ParsedCommand, ParsingError> LLenCommandParse(
-    std::span<const Token> arguments) {
-  if (arguments.size() != 3) {
-    return std::unexpected(WrongArity{"LLEN", 2, arguments.size() - 1});
+    const std::vector<Token>& arguments) {
+  if (arguments.size() != 2) {
+    return std::unexpected(WrongArity{"LLEN", 2, arguments.size()});
   }
 
   return LLen{arguments[1].lexeme};
 }
 
 std::expected<ParsedCommand, ParsingError> LRangeCommandParse(
-    std::span<const Token> arguments) {
-  if (arguments.size() != 5) {
-    return std::unexpected(WrongArity{"LRANGE", 4, arguments.size() - 1});
+    const std::vector<Token>& arguments) {
+  if (arguments.size() != 4) {
+    return std::unexpected(WrongArity{"LRANGE", 4, arguments.size()});
   }
 
   int start = 0;
@@ -113,9 +112,9 @@ std::expected<ParsedCommand, ParsingError> LRangeCommandParse(
 }
 
 std::expected<ParsedCommand, ParsingError> LIndexCommandParse(
-    std::span<const Token> arguments) {
-  if (arguments.size() != 4) {
-    return std::unexpected(WrongArity{"LINDEX", 3, arguments.size() - 1});
+    const std::vector<Token>& arguments) {
+  if (arguments.size() != 3) {
+    return std::unexpected(WrongArity{"LINDEX", 3, arguments.size()});
   }
 
   long long idx = 0;
@@ -129,9 +128,9 @@ std::expected<ParsedCommand, ParsingError> LIndexCommandParse(
 }
 
 std::expected<ParsedCommand, ParsingError> LSetCommandParse(
-    std::span<const Token> arguments) {
-  if (arguments.size() != 5) {
-    return std::unexpected(WrongArity{"LSET", 4, arguments.size() - 1});
+    const std::vector<Token>& arguments) {
+  if (arguments.size() != 4) {
+    return std::unexpected(WrongArity{"LSET", 4, arguments.size()});
   }
 
   long long idx = 0;
@@ -145,9 +144,9 @@ std::expected<ParsedCommand, ParsingError> LSetCommandParse(
 }
 
 std::expected<ParsedCommand, ParsingError> LInsertCommandParse(
-    std::span<const Token> arguments) {
-  if (arguments.size() != 6) {
-    return std::unexpected(WrongArity{"LINSERT", 5, arguments.size() - 1});
+    const std::vector<Token>& arguments) {
+  if (arguments.size() != 5) {
+    return std::unexpected(WrongArity{"LINSERT", 5, arguments.size()});
   }
 
   std::string position = arguments[2].lexeme;

@@ -2,7 +2,7 @@
 
 #include <string>
 
-enum class TokenKind { Bareword, Quoted, EndOfLine };
+enum class TokenKind { kBareword, kQuoted };
 
 struct Token {
   TokenKind kind;

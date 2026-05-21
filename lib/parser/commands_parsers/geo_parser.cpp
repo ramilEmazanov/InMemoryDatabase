@@ -2,8 +2,8 @@
 
 #include <algorithm>
 #include <expected>
-#include <span>
 #include <string>
+#include <vector>
 
 #include "errors.hpp"
 #include "geo_commands.hpp"
@@ -38,7 +38,7 @@ struct GeoSearchOptions {
 };
 
 std::expected<GeoSearchOptions, ParsingError> ParseGeoSearchOptions(
-    std::span<const Token> tokens) {
+    const std::vector<Token>& tokens) {
   GeoSearchOptions opts;
   std::size_t i = 0;
 
@@ -72,9 +72,9 @@ std::expected<GeoSearchOptions, ParsingError> ParseGeoSearchOptions(
 }  // namespace
 
 std::expected<ParsedCommand, ParsingError> GeoAddCommandParse(
-    std::span<const Token> arguments) {
-  if (arguments.size() < 6 || (arguments.size() - 3) % 3 != 0) {
-    return std::unexpected(WrongArity{"GEOADD", 5, arguments.size() - 1});
+    const std::vector<Token>& arguments) {
+  if (arguments.size() < 5 || (arguments.size() - 2) % 3 != 0) {
+    return std::unexpected(WrongArity{"GEOADD", 5, arguments.size()});
   }
 
   GeoAdd cmd;
@@ -96,16 +96,16 @@ std::expected<ParsedCommand, ParsingError> GeoAddCommandParse(
 }
 
 std::expected<ParsedCommand, ParsingError> GeoPosCommandParse(
-    std::span<const Token> arguments) {
-  if (arguments.size() < 4) {
-    return std::unexpected(WrongArity{"GEOPOS", 3, arguments.size() - 1});
+    const std::vector<Token>& arguments) {
+  if (arguments.size() < 3) {
+    return std::unexpected(WrongArity{"GEOPOS", 3, arguments.size()});
   }
 
   GeoPos cmd;
   cmd.key = arguments[1].lexeme;
-  cmd.members.reserve(arguments.size() - 3);
+  cmd.members.reserve(arguments.size() - 2);
 
-  for (std::size_t i = 2; i + 1 < arguments.size(); ++i) {
+  for (std::size_t i = 2; i < arguments.size(); ++i) {
     cmd.members.push_back(arguments[i].lexeme);
   }
 
@@ -113,14 +113,14 @@ std::expected<ParsedCommand, ParsingError> GeoPosCommandParse(
 }
 
 std::expected<ParsedCommand, ParsingError> GeoDistCommandParse(
-    std::span<const Token> arguments) {
-  if (arguments.size() != 5 && arguments.size() != 6) {
-    return std::unexpected(WrongArity{"GEODIST", 4, arguments.size() - 1});
+    const std::vector<Token>& arguments) {
+  if (arguments.size() != 4 && arguments.size() != 5) {
+    return std::unexpected(WrongArity{"GEODIST", 4, arguments.size()});
   }
 
   std::string unit = "m";
 
-  if (arguments.size() == 6) {
+  if (arguments.size() == 5) {
     unit = arguments[4].lexeme;
     if (!IsValidUnit(unit)) {
       return std::unexpected(BadKeyword{unit, "m|km|mi|ft"});
@@ -132,9 +132,9 @@ std::expected<ParsedCommand, ParsingError> GeoDistCommandParse(
 }
 
 std::expected<ParsedCommand, ParsingError> GeoSearchCommandParse(
-    std::span<const Token> arguments) {
-  if (arguments.size() < 9) {
-    return std::unexpected(WrongArity{"GEOSEARCH", 8, arguments.size() - 1});
+    const std::vector<Token>& arguments) {
+  if (arguments.size() < 8) {
+    return std::unexpected(WrongArity{"GEOSEARCH", 8, arguments.size()});
   }
 
   if (ToUpper(arguments[2].lexeme) != "FROMLONLAT") {
@@ -165,7 +165,7 @@ std::expected<ParsedCommand, ParsingError> GeoSearchCommandParse(
   }
 
   auto opts_result =
-      ParseGeoSearchOptions(arguments.subspan(8, arguments.size() - 9));
+      ParseGeoSearchOptions(std::vector<Token>(arguments.begin() + 8, arguments.end()));
   if (!opts_result.has_value()) {
     return std::unexpected(opts_result.error());
   }
@@ -176,10 +176,10 @@ std::expected<ParsedCommand, ParsingError> GeoSearchCommandParse(
 }
 
 std::expected<ParsedCommand, ParsingError> GeoSearchStoreCommandParse(
-    std::span<const Token> arguments) {
-  if (arguments.size() < 10) {
+    const std::vector<Token>& arguments) {
+  if (arguments.size() < 9) {
     return std::unexpected(
-        WrongArity{"GEOSEARCHSTORE", 9, arguments.size() - 1});
+        WrongArity{"GEOSEARCHSTORE", 9, arguments.size()});
   }
 
   if (ToUpper(arguments[3].lexeme) != "FROMLONLAT") {
@@ -211,7 +211,7 @@ std::expected<ParsedCommand, ParsingError> GeoSearchStoreCommandParse(
   }
 
   auto opts_result =
-      ParseGeoSearchOptions(arguments.subspan(9, arguments.size() - 10));
+      ParseGeoSearchOptions(std::vector<Token>(arguments.begin() + 9, arguments.end()));
   if (!opts_result) return std::unexpected(opts_result.error());
 
   return GeoSearchStore{arguments[1].lexeme,   arguments[2].lexeme, lon.value(),

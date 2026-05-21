@@ -1,6 +1,8 @@
 #include "geo_methods.hpp"
 
+#include <cmath>
 #include <numbers>
+#include <string>
 
 constexpr double kEarthRadiusKm = 6372.8;
 

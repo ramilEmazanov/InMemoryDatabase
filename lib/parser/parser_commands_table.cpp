@@ -1,5 +1,8 @@
 #include "parser_commands_table.hpp"
 
+#include <string>
+#include <unordered_map>
+
 #include "general_parser.hpp"
 #include "geo_parser.hpp"
 #include "list_parser.hpp"

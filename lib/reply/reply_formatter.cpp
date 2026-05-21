@@ -1,8 +1,11 @@
 #include "reply_formatter.hpp"
+
+#include <cstddef>
+#include <iostream>
+#include <variant>
+
 #include "overload.hpp"
 #include "reply.hpp"
-#include <variant>
-#include <iostream>
 
 void ReplyFormatter::Format(const Reply& reply, std::ostream& out) {
   auto overload = Overload(

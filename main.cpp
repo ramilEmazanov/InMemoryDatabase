@@ -4,6 +4,7 @@
 #include <cstring>
 #include <format>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 #include <string>
 
@@ -26,22 +27,22 @@ std::size_t ParseMaxMemory(const std::string& input) {
   std::size_t multiplier = 1;
   std::string digits = lower;
 
-  auto EndsWith = [&](std::string_view suffix) {
+  auto ends_with = [&](const std::string& suffix) {
     return lower.size() >= suffix.size() &&
            lower.compare(lower.size() - suffix.size(), suffix.size(), suffix) ==
                0;
   };
 
-  if (EndsWith("kb")) {
+  if (ends_with("kb")) {
     multiplier = 1024;
     digits = input.substr(0, input.size() - 2);
-  } else if (EndsWith("mb")) {
+  } else if (ends_with("mb")) {
     multiplier = 1024 * 1024;
     digits = input.substr(0, input.size() - 2);
-  } else if (EndsWith("gb")) {
+  } else if (ends_with("gb")) {
     multiplier = 1024 * 1024 * 1024;
     digits = input.substr(0, input.size() - 2);
-  } else if (EndsWith("b")) {
+  } else if (ends_with("b")) {
     multiplier = 1;
     digits = input.substr(0, input.size() - 1);
   } else if (std::isalpha(input.back())) {

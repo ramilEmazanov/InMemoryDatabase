@@ -15,24 +15,24 @@ using ::testing::HasSubstr;
 class MemoryCommandTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    memctr = std::make_unique<MemoryController>(0);
-    timectr = std::make_unique<TimeController>();
-    storage = std::make_unique<Storage>(*memctr, *timectr);
-    executor = std::make_unique<CommandExecutor>(*storage, *memctr);
+    memctr_ = std::make_unique<MemoryController>(0);
+    timectr_ = std::make_unique<TimeController>();
+    storage_ = std::make_unique<Storage>(*memctr_, *timectr_);
+    executor_ = std::make_unique<CommandExecutor>(*storage_, *memctr_);
   }
 
   std::string Run(const std::string& cmd) {
     std::istringstream in(cmd);
     std::ostringstream out, err;
-    Runner runner(in, out, err, *executor);
+    Runner runner(in, out, err, *executor_);
     runner.Run();
     return out.str();
   }
 
-  std::unique_ptr<MemoryController> memctr;
-  std::unique_ptr<TimeController> timectr;
-  std::unique_ptr<Storage> storage;
-  std::unique_ptr<CommandExecutor> executor;
+  std::unique_ptr<MemoryController> memctr_;
+  std::unique_ptr<TimeController> timectr_;
+  std::unique_ptr<Storage> storage_;
+  std::unique_ptr<CommandExecutor> executor_;
 };
 
 TEST_F(MemoryCommandTest, ConfigGetDefaultZero) {
@@ -77,8 +77,8 @@ TEST_F(MemoryCommandTest, MemoryUsageList) {
 
 TEST_F(MemoryCommandTest, MemoryUsageGrows) {
   Run("RPUSH l x");
-  std::size_t before = memctr->GetStorageMemoryUsage();
+  std::size_t before = memctr_->GetStorageMemoryUsage();
   Run("RPUSH l yy");
-  std::size_t after = memctr->GetStorageMemoryUsage();
+  std::size_t after = memctr_->GetStorageMemoryUsage();
   EXPECT_EQ(after - before, sizeof(std::string) + std::string("yy").size());
 }

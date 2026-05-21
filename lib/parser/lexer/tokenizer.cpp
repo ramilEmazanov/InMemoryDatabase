@@ -1,6 +1,11 @@
 #include "tokenizer.hpp"
 
+#include <cctype>
+#include <cstddef>
+#include <expected>
 #include <optional>
+#include <string>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -54,11 +59,11 @@ DfaState Transition(DfaState state, char ch, std::size_t column,
           },
           [&](BarewordState s) -> DfaState {
             if (ch == ' ' || ch == '\t') {
-              out.push_back(Token{TokenKind::Bareword, std::move(s.lexeme)});
+              out.push_back(Token{TokenKind::kBareword, std::move(s.lexeme)});
               return InitialState{};
             }
             if (ch == '"') {
-              out.push_back(Token{TokenKind::Bareword, std::move(s.lexeme)});
+              out.push_back(Token{TokenKind::kBareword, std::move(s.lexeme)});
               return QuotedState{"", column};
             }
             s.lexeme += ch;
@@ -66,7 +71,7 @@ DfaState Transition(DfaState state, char ch, std::size_t column,
           },
           [&](QuotedState s) -> DfaState {
             if (ch == '"') {
-              out.push_back(Token{TokenKind::Quoted, std::move(s.lexeme)});
+              out.push_back(Token{TokenKind::kQuoted, std::move(s.lexeme)});
               return InitialState{};
             }
             if (ch == '\\')
@@ -108,7 +113,7 @@ std::optional<LexicalError> Finalize(DfaState& state, std::vector<Token>& out) {
             return std::nullopt;
           },
           [&](BarewordState& s) -> std::optional<LexicalError> {
-            out.push_back(Token{TokenKind::Bareword, std::move(s.lexeme)});
+            out.push_back(Token{TokenKind::kBareword, std::move(s.lexeme)});
             return std::nullopt;
           },
           [](QuotedState& s) -> std::optional<LexicalError> {
@@ -128,7 +133,7 @@ std::optional<LexicalError> Finalize(DfaState& state, std::vector<Token>& out) {
 }  // namespace
 
 std::expected<std::vector<Token>, LexicalError> Tokenizer::Tokenize(
-    std::string_view line) {
+    const std::string& line) {
   std::vector<Token> tokens;
 
   DfaState state = InitialState{};
@@ -147,6 +152,5 @@ std::expected<std::vector<Token>, LexicalError> Tokenizer::Tokenize(
     return std::unexpected{res.value()};
   }
 
-  tokens.push_back(Token{TokenKind::EndOfLine, ""});
   return tokens;
 }

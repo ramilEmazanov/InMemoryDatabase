@@ -1,11 +1,14 @@
 #include "runner.hpp"
 
 #include <algorithm>
+#include <cctype>
+#include <istream>
+#include <ostream>
+#include <string>
 
 #include "command_parser.hpp"
 #include "errors.hpp"
 #include "reply_formatter.hpp"
-#include "token.hpp"
 #include "tokenizer.hpp"
 
 int Runner::Run() {
@@ -15,7 +18,7 @@ int Runner::Run() {
     auto tokens = Tokenizer::Tokenize(line);
 
     if (tokens.has_value() && tokens->size() == 1 &&
-        tokens->front().kind == TokenKind::Bareword) {
+        tokens->front().kind == TokenKind::kBareword) {
       std::string cmd = tokens->front().lexeme;
       std::transform(cmd.begin(), cmd.end(), cmd.begin(), ::toupper);
       if (cmd == "EXIT") {

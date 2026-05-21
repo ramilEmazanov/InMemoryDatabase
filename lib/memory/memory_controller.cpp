@@ -1,6 +1,6 @@
 #include "memory_controller.hpp"
 
-#include <stdexcept>
+#include <cstddef>
 
 MemoryController::MemoryController(std::size_t max_bytes)
     : used_bytes_(0), max_bytes_(max_bytes) {}

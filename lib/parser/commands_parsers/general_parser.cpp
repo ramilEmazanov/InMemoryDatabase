@@ -1,16 +1,17 @@
 #include "general_parser.hpp"
 
 #include <algorithm>
+#include <cctype>
+#include <cstddef>
 #include <expected>
-#include <iostream>
+#include <string>
 
 #include "errors.hpp"
-#include "string_parser.hpp"
 
 std::expected<ParsedCommand, ParsingError> ExpireCommandParse(
-    std::span<const Token> arguments) {
-  if (arguments.size() != 4) {
-    return std::unexpected(WrongArity{"EXPIRE", 3, arguments.size() - 1});
+    const std::vector<Token>& arguments) {
+  if (arguments.size() != 3) {
+    return std::unexpected(WrongArity{"EXPIRE", 3, arguments.size()});
   }
 
   const std::string& seconds_token = arguments[2].lexeme;
@@ -26,33 +27,33 @@ std::expected<ParsedCommand, ParsingError> ExpireCommandParse(
 }
 
 std::expected<ParsedCommand, ParsingError> TTLCommandParse(
-    std::span<const Token> arguments) {
-  if (arguments.size() != 3) {
-    return std::unexpected(WrongArity{"TTL", 2, arguments.size() - 1});
+    const std::vector<Token>& arguments) {
+  if (arguments.size() != 2) {
+    return std::unexpected(WrongArity{"TTL", 2, arguments.size()});
   }
 
   return TTLCommand{arguments[1].lexeme};
 }
 
 std::expected<ParsedCommand, ParsingError> TypeCommandParse(
-    std::span<const Token> arguments) {
-  if (arguments.size() != 3) {
-    return std::unexpected(WrongArity{"TYPE", 2, arguments.size() - 1});
+    const std::vector<Token>& arguments) {
+  if (arguments.size() != 2) {
+    return std::unexpected(WrongArity{"TYPE", 2, arguments.size()});
   }
 
   return TypeCommand{arguments[1].lexeme};
 }
 
 std::expected<ParsedCommand, ParsingError> DelCommandParse(
-    std::span<const Token> arguments) {
-  if (arguments.size() < 3) {
-    return std::unexpected(WrongArity{"DEL", 2, arguments.size() - 1});
+    const std::vector<Token>& arguments) {
+  if (arguments.size() < 2) {
+    return std::unexpected(WrongArity{"DEL", 2, arguments.size()});
   }
 
   std::vector<std::string> keys;
-  keys.reserve(arguments.size() - 2);
+  keys.reserve(arguments.size() - 1);
 
-  for (std::size_t i = 1; i + 1 < arguments.size(); ++i) {
+  for (std::size_t i = 1; i < arguments.size(); ++i) {
     keys.push_back(arguments[i].lexeme);
   }
 
@@ -60,15 +61,15 @@ std::expected<ParsedCommand, ParsingError> DelCommandParse(
 }
 
 std::expected<ParsedCommand, ParsingError> ExistsCommandParse(
-    std::span<const Token> arguments) {
-  if (arguments.size() < 3) {
-    return std::unexpected(WrongArity{"EXISTS", 2, arguments.size() - 1});
+    const std::vector<Token>& arguments) {
+  if (arguments.size() < 2) {
+    return std::unexpected(WrongArity{"EXISTS", 2, arguments.size()});
   }
 
   std::vector<std::string> keys;
-  keys.reserve(arguments.size() - 2);
+  keys.reserve(arguments.size() - 1);
 
-  for (std::size_t i = 1; i + 1 < arguments.size(); ++i) {
+  for (std::size_t i = 1; i < arguments.size(); ++i) {
     keys.push_back(arguments[i].lexeme);
   }
 
@@ -76,27 +77,27 @@ std::expected<ParsedCommand, ParsingError> ExistsCommandParse(
 }
 
 std::expected<ParsedCommand, ParsingError> KeysCommandParse(
-    std::span<const Token> arguments) {
-  if (arguments.size() != 3) {
-    return std::unexpected(WrongArity{"KEYS", 2, arguments.size() - 1});
+    const std::vector<Token>& arguments) {
+  if (arguments.size() != 2) {
+    return std::unexpected(WrongArity{"KEYS", 2, arguments.size()});
   }
 
   return KeysCommand{arguments[1].lexeme};
 }
 
 std::expected<ParsedCommand, ParsingError> FlushDbCommandParse(
-    std::span<const Token> arguments) {
-  if (arguments.size() != 2) {
-    return std::unexpected(WrongArity{"FLUSHDB", 1, arguments.size() - 1});
+    const std::vector<Token>& arguments) {
+  if (arguments.size() != 1) {
+    return std::unexpected(WrongArity{"FLUSHDB", 1, arguments.size()});
   }
 
   return FlushDbCommand{};
 }
 
 std::expected<ParsedCommand, ParsingError> ConfigCommandParse(
-    std::span<const Token> arguments) {
-  if (arguments.size() < 4) {
-    return std::unexpected(WrongArity{"CONFIG", 3, arguments.size() - 1});
+    const std::vector<Token>& arguments) {
+  if (arguments.size() < 3) {
+    return std::unexpected(WrongArity{"CONFIG", 3, arguments.size()});
   }
 
   std::string subcommand = arguments[1].lexeme;
@@ -104,8 +105,8 @@ std::expected<ParsedCommand, ParsingError> ConfigCommandParse(
                  ::toupper);
 
   if (subcommand == "SET") {
-    if (arguments.size() != 5) {
-      return std::unexpected(WrongArity{"CONFIG SET", 4, arguments.size() - 1});
+    if (arguments.size() != 4) {
+      return std::unexpected(WrongArity{"CONFIG SET", 4, arguments.size()});
     }
     const std::string& param = arguments[2].lexeme;
     const std::string& val_token = arguments[3].lexeme;
@@ -119,8 +120,8 @@ std::expected<ParsedCommand, ParsingError> ConfigCommandParse(
   }
 
   if (subcommand == "GET") {
-    if (arguments.size() != 4) {
-      return std::unexpected(WrongArity{"CONFIG GET", 3, arguments.size() - 1});
+    if (arguments.size() != 3) {
+      return std::unexpected(WrongArity{"CONFIG GET", 3, arguments.size()});
     }
     return ConfigGetCommand{arguments[2].lexeme};
   }
@@ -129,18 +130,18 @@ std::expected<ParsedCommand, ParsingError> ConfigCommandParse(
 }
 
 std::expected<ParsedCommand, ParsingError> DbSizeCommandParse(
-    std::span<const Token> arguments) {
-  if (arguments.size() != 2) {
-    return std::unexpected(WrongArity{"DBSIZE", 1, arguments.size() - 1});
+    const std::vector<Token>& arguments) {
+  if (arguments.size() != 1) {
+    return std::unexpected(WrongArity{"DBSIZE", 1, arguments.size()});
   }
 
   return DbSizeCommand{};
 }
 
 std::expected<ParsedCommand, ParsingError> MemoryCommandParse(
-    std::span<const Token> arguments) {
-  if (arguments.size() < 3) {
-    return std::unexpected(WrongArity{"MEMORY", 2, arguments.size() - 1});
+    const std::vector<Token>& arguments) {
+  if (arguments.size() < 2) {
+    return std::unexpected(WrongArity{"MEMORY", 2, arguments.size()});
   }
 
   std::string subcommand = arguments[1].lexeme;
@@ -151,8 +152,8 @@ std::expected<ParsedCommand, ParsingError> MemoryCommandParse(
     return std::unexpected(BadKeyword{arguments[1].lexeme, "USAGE"});
   }
 
-  if (arguments.size() != 4) {
-    return std::unexpected(WrongArity{"MEMORY USAGE", 3, arguments.size() - 1});
+  if (arguments.size() != 3) {
+    return std::unexpected(WrongArity{"MEMORY USAGE", 3, arguments.size()});
   }
 
   return MemoryUsageCommand{arguments[2].lexeme};
