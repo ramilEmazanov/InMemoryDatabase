@@ -1,5 +1,7 @@
 #include "runner.hpp"
 
+#include <algorithm>
+
 #include "command_parser.hpp"
 #include "errors.hpp"
 #include "reply_formatter.hpp"
@@ -11,6 +13,14 @@ int Runner::Run() {
 
   while (std::getline(in_, line)) {
     auto tokens = Tokenizer::Tokenize(line);
+
+    if (tokens.has_value() && tokens->size() == 1) {
+      std::string cmd = tokens->front().lexeme;
+      std::transform(cmd.begin(), cmd.end(), cmd.begin(), ::toupper);
+      if (cmd == "EXIT") {
+        break;
+      }
+    }
 
     if (!tokens.has_value()) {
       error_out_ << "Tokenizing error : " << FormatLexicalError(tokens.error())

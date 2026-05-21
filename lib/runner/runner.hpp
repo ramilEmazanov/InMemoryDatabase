@@ -1,11 +1,13 @@
 #pragma once
 
 #include <fstream>
+
 #include "command_executor.hpp"
 
 class Runner {
  public:
-  Runner(std::istream& in, std::ostream& out, std::ostream& error_out, CommandExecutor& executor);
+  Runner(std::istream& in, std::ostream& out, std::ostream& error_out,
+         CommandExecutor& executor);
 
   int Run();
 

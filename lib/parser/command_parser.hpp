@@ -5,8 +5,8 @@
 #include <token.hpp>
 #include <variant>
 
-#include "parsed_command.hpp"
 #include "errors.hpp"
+#include "parsed_command.hpp"
 
 class CommandParser {
  public:

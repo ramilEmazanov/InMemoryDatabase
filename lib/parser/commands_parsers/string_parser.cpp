@@ -1,11 +1,11 @@
 #include "string_parser.hpp"
-#include "string_commands.hpp"
 
 #include <expected>
 #include <iostream>
 #include <span>
 
 #include "errors.hpp"
+#include "string_commands.hpp"
 
 std::expected<ParsedCommand, ParsingError> SetCommandParse(
     std::span<const Token> arguments) {
@@ -42,4 +42,3 @@ std::expected<ParsedCommand, ParsingError> AppendCommandParse(
 
   return AppendCommand{arguments[1].lexeme, arguments[2].lexeme};
 }
-

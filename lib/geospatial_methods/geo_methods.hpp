@@ -6,7 +6,7 @@
 class GeoSpatial {
  public:
   static double ConvertToKm(double value, const std::string& unit);
-  
+
   static double ConvertFromKm(double km, const std::string& unit);
 
   static double HaversineDistanceKm(double lon1, double lat1, double lon2,

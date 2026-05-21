@@ -19,4 +19,3 @@ struct AppendCommand {
   std::string key;
   std::string value;
 };
-
